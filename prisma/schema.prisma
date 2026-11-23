@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  teacher
+  student
+}
+
+model Workplace {
+  workplaceId      Int       @id @default(autoincrement()) @map("workplace_id")
+  workplaceName    String    @map("workplace_name")
+  workplaceAddress String    @map("workplace_address")
+  workType         String    @map("work_type")
+  description      String?
+  workTel          String?   @map("work_tel")
+  userId           String?   @map("user_id")
+  rating           Float     @default(0)
+  show             Boolean   @default(true)
+  map              String?
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  selectedByUsers  User[]    @relation("SelectedWorkplace")
+  comments         Comment[]
+
+  @@map("workplaces")
+}
+
+model User {
+  userId      String     @id @map("user_id")
+  username    String     @unique
+  password    String
+  role        Role       @default(student)
+  userFname   String     @map("user_fname")
+  userLname   String     @map("user_lname")
+  userTel     String?    @default("") @map("user_tel")
+  workplaceId Int?       @map("workplace_id")
+
+  workplace   Workplace? @relation("SelectedWorkplace", fields: [workplaceId], references: [workplaceId], onDelete: SetNull)
+  comments    Comment[]
+
+  @@map("users")
+}
+
+model Comment {
+  commentId   Int       @id @default(autoincrement()) @map("comment_id")
+  userId      String    @map("user_id")
+  workplaceId Int       @map("workplace_id")
+  commentText String    @map("comment_text")
+  rating      Float     @default(5)
+  commentTime DateTime  @default(now()) @map("comment_time")
+  show        Boolean   @default(true)
+  img         String?
+
+  user        User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  workplace   Workplace @relation(fields: [workplaceId], references: [workplaceId], onDelete: Cascade)
+
+  @@map("comments")
+}

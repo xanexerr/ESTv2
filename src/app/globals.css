@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-ssp-bg text-slate-800 antialiased min-h-screen flex flex-col;
+    font-family: 'IBM Plex Sans Thai', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-image:
+      radial-gradient(circle at 10% 10%, rgba(19, 111, 115, 0.05) 0%, transparent 45%),
+      radial-gradient(circle at 90% 80%, rgba(255, 183, 43, 0.06) 0%, transparent 45%);
+    background-attachment: fixed;
+  }
+}

@@ -1,0 +1,583 @@
+/* ==========================================================================
+   HTC EstV2 — Modern Design System (Inspired by SeniorStepPass Flutter Theme)
+   Primary Teal: #136F73 | Deep Teal: #0E5457 | Accent Amber: #FFB72B
+   ========================================================================== */
+
+:root {
+    --ssp-primary: #136F73;
+    --ssp-primary-dark: #0D5255;
+    --ssp-primary-light: #E6F3F3;
+    --ssp-secondary: #FFB72B;
+    --ssp-secondary-dark: #E09B10;
+    --ssp-accent-cream: #F7F8E0;
+    --ssp-accent-soft: #FDFDF5;
+    --ssp-info: #17A2B8;
+    --ssp-success: #16A34A;
+    --ssp-warning: #F59E0B;
+    --ssp-danger: #DC2626;
+    --ssp-bg: #F4F7F8;
+    --ssp-surface: #FFFFFF;
+    --ssp-text-main: #1E293B;
+    --ssp-text-secondary: #475569;
+    --ssp-text-muted: #94A3B8;
+    --ssp-border: #E2E8F0;
+    --ssp-radius-sm: 8px;
+    --ssp-radius-md: 12px;
+    --ssp-radius-lg: 16px;
+    --ssp-radius-pill: 9999px;
+    --ssp-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+    --ssp-shadow-md: 0 4px 12px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+    --ssp-shadow-lg: 0 12px 24px -4px rgba(15, 23, 42, 0.12), 0 4px 10px -2px rgba(15, 23, 42, 0.06);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'IBM Plex Sans Thai', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--ssp-bg);
+    background-image: radial-gradient(circle at 10% 10%, rgba(19, 111, 115, 0.05) 0%, transparent 45%),
+                      radial-gradient(circle at 90% 80%, rgba(255, 183, 43, 0.06) 0%, transparent 45%);
+    background-attachment: fixed;
+    color: var(--ssp-text-main);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+}
+
+a {
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+/* ==========================================================================
+   Top Brand Bar & Modern Navigation
+   ========================================================================== */
+.ssp-topbar {
+    background: linear-gradient(135deg, var(--ssp-primary-dark) 0%, var(--ssp-primary) 100%);
+    color: #fff;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.ssp-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #fff !important;
+}
+
+.ssp-brand-logo {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: #fff;
+    padding: 4px;
+    object-fit: contain;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.ssp-brand-title {
+    font-weight: 700;
+    font-size: 1.15rem;
+    line-height: 1.2;
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+.ssp-brand-subtitle {
+    font-size: 0.78rem;
+    opacity: 0.85;
+    margin: 0;
+}
+
+.ssp-user-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    padding: 0.35rem 0.85rem 0.35rem 0.45rem;
+    border-radius: var(--ssp-radius-pill);
+    color: #fff;
+    font-size: 0.88rem;
+}
+
+.ssp-user-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--ssp-secondary);
+    color: #1E293B;
+    font-weight: 700;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ssp-role-tag {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--ssp-radius-pill);
+    background: var(--ssp-secondary);
+    color: #1E293B;
+}
+
+.ssp-navbar {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--ssp-border);
+    box-shadow: var(--ssp-shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    padding: 0.45rem 0;
+}
+
+.ssp-nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--ssp-text-secondary) !important;
+    font-weight: 500;
+    font-size: 0.92rem;
+    padding: 0.5rem 0.95rem !important;
+    border-radius: var(--ssp-radius-sm);
+    transition: all 0.2s ease;
+    margin: 0 0.15rem;
+}
+
+.ssp-nav-link:hover {
+    color: var(--ssp-primary) !important;
+    background-color: var(--ssp-primary-light);
+}
+
+.ssp-nav-link.active,
+.ssp-nav-link.disabled {
+    color: var(--ssp-primary) !important;
+    background-color: var(--ssp-primary-light);
+    font-weight: 600;
+    pointer-events: auto;
+    opacity: 1;
+}
+
+/* ==========================================================================
+   Hero & Search Section
+   ========================================================================== */
+.ssp-hero {
+    background: linear-gradient(135deg, #0D5255 0%, #136F73 60%, #1B8A8F 100%);
+    color: #fff;
+    border-radius: var(--ssp-radius-lg);
+    padding: 2.25rem 2rem;
+    margin-bottom: 1.75rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--ssp-shadow-md);
+}
+
+.ssp-hero::after {
+    content: '';
+    position: absolute;
+    right: -40px;
+    top: -40px;
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 183, 43, 0.22) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.ssp-search-box {
+    background: #fff;
+    border-radius: var(--ssp-radius-md);
+    padding: 0.5rem;
+    box-shadow: var(--ssp-shadow-lg);
+}
+
+.ssp-search-input {
+    border: none !important;
+    box-shadow: none !important;
+    font-size: 0.95rem;
+    padding: 0.6rem 0.75rem;
+    color: var(--ssp-text-main);
+}
+
+.ssp-filter-select {
+    border: 1px solid var(--ssp-border) !important;
+    border-radius: var(--ssp-radius-sm) !important;
+    font-size: 0.9rem;
+    color: var(--ssp-text-main);
+    padding: 0.55rem 0.75rem;
+    background-color: #F8FAFC;
+}
+
+.ssp-category-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.ssp-cat-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.95rem;
+    border-radius: var(--ssp-radius-pill);
+    font-size: 0.85rem;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ssp-cat-pill:hover {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.ssp-cat-pill.active {
+    background: var(--ssp-secondary);
+    color: #1E293B;
+    border-color: var(--ssp-secondary);
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(255, 183, 43, 0.35);
+}
+
+/* ==========================================================================
+   Cards & Highlights (SeniorStepPass Style)
+   ========================================================================== */
+.ssp-card {
+    background: var(--ssp-surface);
+    border: 1px solid var(--ssp-border);
+    border-radius: var(--ssp-radius-md);
+    box-shadow: var(--ssp-shadow-sm);
+    transition: all 0.22s ease;
+}
+
+.ssp-card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--ssp-shadow-md);
+    border-color: rgba(19, 111, 115, 0.35);
+}
+
+.ssp-highlight-card {
+    background: linear-gradient(180deg, #FFFFFF 0%, #FDFDF5 100%);
+    border: 1px solid #E5E7C8;
+    border-radius: var(--ssp-radius-md);
+    box-shadow: var(--ssp-shadow-sm);
+    overflow: hidden;
+}
+
+.ssp-highlight-header {
+    background: linear-gradient(90deg, var(--ssp-primary) 0%, #1B8A8F 100%);
+    color: #fff;
+    padding: 0.75rem 1.15rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ssp-rank-badge {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--ssp-primary);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.ssp-rank-badge.rank-1 {
+    background: linear-gradient(135deg, #F59E0B, #D97706);
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
+}
+
+.ssp-rank-badge.rank-2 {
+    background: linear-gradient(135deg, #64748B, #475569);
+}
+
+.ssp-rank-badge.rank-3 {
+    background: linear-gradient(135deg, #B45309, #92400E);
+}
+
+.ssp-company-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+}
+
+.ssp-company-icon-lg {
+    width: 72px;
+    height: 72px;
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.85rem;
+    flex-shrink: 0;
+}
+
+.ssp-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.7rem;
+    border-radius: var(--ssp-radius-pill);
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   Star Ratings
+   ========================================================================== */
+.ssp-stars {
+    color: #F59E0B;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.ssp-stars .empty {
+    color: #CBD5E1;
+}
+
+/* Interactive Star Rating Widget for Forms */
+.star-widget {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: 0.35rem;
+}
+
+.star-widget input {
+    display: none;
+}
+
+.star-widget label {
+    font-size: 2rem;
+    color: #CBD5E1;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    margin: 0;
+}
+
+.star-widget input:not(:checked) ~ label:hover,
+.star-widget input:not(:checked) ~ label:hover ~ label,
+.star-widget input:checked ~ label {
+    color: #FFB72B;
+    transform: scale(1.06);
+}
+
+/* ==========================================================================
+   Buttons & Badges
+   ========================================================================== */
+.btn-ssp-primary {
+    background-color: var(--ssp-primary);
+    border-color: var(--ssp-primary);
+    color: #fff;
+    font-weight: 500;
+    border-radius: var(--ssp-radius-sm);
+    padding: 0.5rem 1.1rem;
+}
+
+.btn-ssp-primary:hover,
+.btn-ssp-primary:focus {
+    background-color: var(--ssp-primary-dark);
+    border-color: var(--ssp-primary-dark);
+    color: #fff;
+}
+
+.btn-ssp-amber {
+    background-color: var(--ssp-secondary);
+    border-color: var(--ssp-secondary);
+    color: #1E293B;
+    font-weight: 600;
+    border-radius: var(--ssp-radius-sm);
+    padding: 0.5rem 1.1rem;
+}
+
+.btn-ssp-amber:hover {
+    background-color: var(--ssp-secondary-dark);
+    border-color: var(--ssp-secondary-dark);
+    color: #1E293B;
+}
+
+/* ==========================================================================
+   Tables & Admin Dashboard
+   ========================================================================== */
+.ssp-stat-card {
+    background: var(--ssp-surface);
+    border: 1px solid var(--ssp-border);
+    border-radius: var(--ssp-radius-md);
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: var(--ssp-shadow-sm);
+}
+
+.ssp-stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+}
+
+.ssp-table-wrapper {
+    background: var(--ssp-surface);
+    border: 1px solid var(--ssp-border);
+    border-radius: var(--ssp-radius-md);
+    overflow: hidden;
+    box-shadow: var(--ssp-shadow-sm);
+}
+
+.ssp-table {
+    margin-bottom: 0;
+    vertical-align: middle;
+}
+
+.ssp-table thead th {
+    background-color: #F8FAFC;
+    color: var(--ssp-text-secondary);
+    font-weight: 600;
+    font-size: 0.84rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--ssp-border);
+}
+
+.ssp-table tbody td {
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid var(--ssp-border);
+    color: var(--ssp-text-main);
+    font-size: 0.93rem;
+}
+
+.ssp-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.ssp-table tbody tr:hover {
+    background-color: #F8FAFC;
+}
+
+.ssp-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.7rem;
+    border-radius: var(--ssp-radius-pill);
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.ssp-status-badge.status-active {
+    background-color: rgba(22, 163, 74, 0.12);
+    color: #15803D;
+}
+
+.ssp-status-badge.status-hidden {
+    background-color: rgba(220, 38, 38, 0.12);
+    color: #B91C1C;
+}
+
+/* ==========================================================================
+   Gallery & Lightbox Modal
+   ========================================================================== */
+.image-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 0.75rem;
+}
+
+.gallery-image {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: var(--ssp-radius-sm);
+    cursor: pointer;
+    border: 1px solid var(--ssp-border);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.gallery-image:hover {
+    transform: scale(1.03);
+    box-shadow: var(--ssp-shadow-md);
+}
+
+.ssp-lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+    padding: 1.5rem;
+}
+
+.ssp-lightbox-content {
+    position: relative;
+    max-width: 85vw;
+    max-height: 85vh;
+    text-align: center;
+}
+
+.ssp-lightbox-img {
+    max-width: 100%;
+    max-height: 80vh;
+    border-radius: var(--ssp-radius-md);
+    box-shadow: var(--ssp-shadow-lg);
+    object-fit: contain;
+}
+
+/* ==========================================================================
+   Pagination & Footer
+   ========================================================================== */
+.pagination .page-link {
+    color: var(--ssp-primary);
+    border-color: var(--ssp-border);
+    border-radius: var(--ssp-radius-sm);
+    margin: 0 3px;
+    font-weight: 500;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--ssp-primary);
+    border-color: var(--ssp-primary);
+    color: #fff;
+}
+
+.ssp-footer {
+    margin-top: auto;
+    background: linear-gradient(135deg, var(--ssp-primary-dark) 0%, var(--ssp-primary) 100%);
+    color: rgba(255, 255, 255, 0.9);
+    padding: 1.5rem 0;
+    font-size: 0.9rem;
+}
