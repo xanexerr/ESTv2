@@ -1,5 +1,5 @@
 import React from "react";
-import { Github, Facebook, Code2 } from "lucide-react";
+import { Github, Facebook } from "lucide-react";
 
 const developers = [
   {
@@ -25,45 +25,44 @@ const developers = [
 
 export default function AboutPage() {
   return (
-    <div className="py-6">
-      <div className="text-center mb-10">
-        <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold bg-ssp-light text-ssp-primary mb-2.5">
-          <Code2 className="w-3.5 h-3.5" /> Development Team
-        </span>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
-          ทีมผู้พัฒนาและติดต่อแอดมิน
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-xl font-semibold text-ink-primary">
+          ผู้พัฒนาและติดต่อผู้ดูแลระบบ EST
         </h1>
-        <p className="text-sm text-slate-500 mt-1">
-          คณะผู้จัดทำโครงการระบบรวบรวมสถานประกอบการ แผนกเทคโนโลยีสารสนเทศ วิทยาลัยเทคนิคหาดใหญ่
+        <p className="text-xs text-ink-secondary mt-0.5">
+          ช่องทางติดต่อสำหรับแจ้งปัญหาการใช้งานหรือสอบถามการอนุมัติบัญชี
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl">
         {developers.map((dev) => (
           <div
             key={dev.name}
-            className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 transition text-center flex flex-col"
+            className="bg-paper-surface rounded-xl border border-line overflow-hidden flex flex-col"
           >
             <img
               src={dev.img}
               alt={dev.name}
-              className="w-full aspect-[3.6/4] object-cover"
+              className="w-full aspect-square object-cover border-b border-line"
             />
-            <div className="p-5 flex-grow flex flex-col justify-between">
+            <div className="p-4 flex-grow flex flex-col justify-between gap-3">
               <div>
-                <h2 className="text-lg font-bold text-slate-800">{dev.name}</h2>
-                <p className="text-xs text-slate-500 mt-0.5 mb-4">{dev.role}</p>
+                <h2 className="text-sm font-semibold text-ink-primary">
+                  {dev.name}
+                </h2>
+                <p className="text-xs text-ink-secondary mt-0.5">{dev.role}</p>
               </div>
 
-              <div className="flex justify-center gap-2.5">
+              <div className="flex items-center gap-2 pt-3 border-t border-line">
                 {dev.github && (
                   <a
                     href={dev.github}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-slate-300 text-slate-700 hover:bg-slate-800 hover:text-white text-xs font-semibold transition"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line-strong text-ink-secondary hover:text-ink-primary text-xs font-medium transition-colors"
                   >
-                    <Github className="w-3.5 h-3.5" /> GitHub
+                    <Github strokeWidth={1.5} className="w-3.5 h-3.5" /> GitHub
                   </a>
                 )}
                 {dev.facebook && (
@@ -71,9 +70,9 @@ export default function AboutPage() {
                     href={dev.facebook}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white text-xs font-semibold transition"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line-strong text-ink-secondary hover:text-brand text-xs font-medium transition-colors"
                   >
-                    <Facebook className="w-3.5 h-3.5" /> Facebook
+                    <Facebook strokeWidth={1.5} className="w-3.5 h-3.5" /> Facebook
                   </a>
                 )}
               </div>

@@ -25,10 +25,10 @@ export default async function AdminEditWorkplacePage({
 
   return (
     <div className="max-w-2xl mx-auto my-4">
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-        <div className="bg-gradient-to-r from-ssp-dark to-ssp-primary text-white p-6">
-          <h1 className="text-lg font-bold">แก้ไขรายละเอียดสถานประกอบการ</h1>
-          <p className="text-xs text-white/80 mt-0.5">
+      <div className="bg-paper-surface rounded-2xl border border-line overflow-hidden">
+        <div className="p-6 border-b border-line">
+          <h1 className="text-lg font-semibold text-ink-primary">แก้ไขรายละเอียดสถานประกอบการ</h1>
+          <p className="text-xs text-ink-secondary mt-0.5">
             จัดการข้อมูลและสถานะการแสดงผลบนหน้าเว็บไซต์
           </p>
         </div>

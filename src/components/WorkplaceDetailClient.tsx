@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { selectWorkplaceAction } from "@/app/actions";
-import { CheckCircle2, X, Images } from "lucide-react";
+import { Check, X } from "lucide-react";
 
 export function SelectWorkplaceButton({
   workplaceId,
@@ -14,30 +14,39 @@ export function SelectWorkplaceButton({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   async function handleSelect() {
     setLoading(true);
+    setErrorMsg(null);
     const res = await selectWorkplaceAction(workplaceId);
     setLoading(false);
     if (res.ok && res.redirectTo) {
       router.push(res.redirectTo);
       router.refresh();
     } else {
-      alert(res.message);
+      setErrorMsg(res.message);
     }
   }
 
   return (
-    <button
-      onClick={handleSelect}
-      disabled={loading}
-      className="w-full inline-flex items-center justify-center gap-2 py-3 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-semibold shadow-sm transition"
-    >
-      <CheckCircle2 className="w-5 h-5" />
-      {loading
-        ? "กำลังบันทึก..."
-        : `เลือก ${workplaceName} เป็นสถานประกอบการของฉัน`}
-    </button>
+    <div className="space-y-2">
+      {errorMsg && (
+        <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-xs font-medium">
+          {errorMsg}
+        </div>
+      )}
+      <button
+        onClick={handleSelect}
+        disabled={loading}
+        className="w-full min-h-[44px] sm:min-h-0 sm:h-10 inline-flex items-center justify-center gap-2 px-4 rounded-lg bg-brand hover:bg-brand-hover disabled:opacity-60 text-white text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+      >
+        <Check strokeWidth={1.5} aria-hidden="true" className="w-4 h-4" />
+        {loading
+          ? "กำลังบันทึก..."
+          : `เลือก ${workplaceName} เป็นสถานประกอบการของฉัน`}
+      </button>
+    </div>
   );
 }
 
@@ -46,8 +55,7 @@ export function ImageGalleryLightbox({ images }: { images: string[] }) {
 
   if (images.length === 0) {
     return (
-      <div className="text-center py-6 text-slate-400 text-xs">
-        <Images className="w-8 h-8 mx-auto mb-2 opacity-50" />
+      <div className="py-6 text-center text-xs text-ink-muted">
         ยังไม่มีรูปภาพที่อัปโหลดสำหรับสถานประกอบการนี้
       </div>
     );
@@ -55,18 +63,18 @@ export function ImageGalleryLightbox({ images }: { images: string[] }) {
 
   return (
     <>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {images.map((img, i) => (
           <button
             key={i}
             type="button"
             onClick={() => setSelected(img)}
-            className="overflow-hidden rounded-lg border border-slate-200 group"
+            className="overflow-hidden rounded-lg border border-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
           >
             <img
               src={img}
-              alt={`Workplace image ${i + 1}`}
-              className="w-full h-28 object-cover group-hover:scale-105 transition duration-200"
+              alt={`ภาพบรรยากาศฝึกงาน ${i + 1}`}
+              className="w-full h-24 object-cover hover:opacity-90 transition-opacity duration-150"
             />
           </button>
         ))}
@@ -75,23 +83,23 @@ export function ImageGalleryLightbox({ images }: { images: string[] }) {
       {selected && (
         <div
           onClick={() => setSelected(null)}
-          className="fixed inset-0 z-50 bg-slate-900/85 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-zinc-950/80 flex items-center justify-center p-6"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative max-w-4xl max-h-[85vh] flex flex-col items-center"
+            className="relative max-w-4xl max-h-[85vh] flex flex-col items-center gap-3"
           >
             <img
               src={selected}
-              alt="Full preview"
-              className="max-w-full max-h-[75vh] rounded-xl shadow-2xl object-contain"
+              alt="ภาพขนาดเต็ม"
+              className="max-w-full max-h-[75vh] rounded-xl object-contain"
             />
             <button
               type="button"
               onClick={() => setSelected(null)}
-              className="mt-4 inline-flex items-center gap-1.5 px-5 py-2 rounded-full bg-white text-slate-800 text-sm font-semibold shadow-lg hover:bg-slate-100"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-paper-surface text-ink-primary text-xs font-medium hover:bg-paper-muted transition-colors"
             >
-              <X className="w-4 h-4" /> ปิดรูปภาพ
+              <X strokeWidth={1.5} className="w-4 h-4" /> ปิดรูปภาพ
             </button>
           </div>
         </div>

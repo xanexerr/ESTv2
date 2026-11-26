@@ -5,7 +5,8 @@ import { createSessionCookie, clearSessionCookie, getSessionUser } from "@/lib/a
 import { revalidatePath } from "next/cache";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
-import { Role } from "@prisma/client";
+import { Role, AccountStatus, WorkMode } from "@prisma/client";
+import { generateNextUserCode } from "@/lib/constants";
 
 export interface ActionResult {
   ok: boolean;
@@ -14,7 +15,7 @@ export interface ActionResult {
 }
 
 /* ==========================================================================
-   1. Authentication Actions
+   1. Authentication & Registration Actions
    ========================================================================== */
 export async function loginAction(formData: FormData): Promise<ActionResult> {
   const usernameInput = String(formData.get("username") || "").trim();
@@ -32,7 +33,21 @@ export async function loginAction(formData: FormData): Promise<ActionResult> {
   });
 
   if (!user) {
-    return { ok: false, message: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณากรอกใหม่อีกครั้ง" };
+    return { ok: false, message: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" };
+  }
+
+  if (user.status === AccountStatus.pending) {
+    return {
+      ok: false,
+      message: "บัญชีของคุณอยู่ระหว่างรอผู้ดูแลระบบตรวจสอบหลักฐานและอนุมัติ",
+    };
+  }
+
+  if (user.status === AccountStatus.rejected) {
+    return {
+      ok: false,
+      message: "คำขอสมัครสมาชิกของคุณไม่ได้รับการอนุมัติ กรุณาติดต่อผู้ดูแลระบบ",
+    };
   }
 
   await createSessionCookie({
@@ -44,7 +59,146 @@ export async function loginAction(formData: FormData): Promise<ActionResult> {
   });
 
   revalidatePath("/");
-  return { ok: true, message: "เข้าสู่ระบบสำเร็จ", redirectTo: "/" };
+  return {
+    ok: true,
+    message: "เข้าสู่ระบบสำเร็จ",
+    redirectTo: user.role === "admin" ? "/admin/approvals" : "/",
+  };
+}
+
+export async function registerAction(formData: FormData): Promise<ActionResult> {
+  const password = String(formData.get("password") || "").trim();
+  const userFname = String(formData.get("user_fname") || "").trim();
+  const userLname = String(formData.get("user_lname") || "").trim();
+  const userTel = String(formData.get("user_tel") || "").trim();
+  const universityId = Number(formData.get("university_id"));
+  const facultyId = Number(formData.get("faculty_id"));
+  const majorIdRaw = Number(formData.get("major_id"));
+  const academicYear = String(formData.get("academic_year") || "").trim();
+  const roleRaw = String(formData.get("role") || "student").trim();
+  const evidence = formData.get("evidence") as File | null;
+
+  if (
+    !password ||
+    !userFname ||
+    !userLname ||
+    !universityId ||
+    !facultyId ||
+    !academicYear
+  ) {
+    return { ok: false, message: "กรุณากรอกข้อมูลและเลือกมหาวิทยาลัย/คณะให้ครบทุกช่อง" };
+  }
+
+  if (!evidence || evidence.size === 0) {
+    return {
+      ok: false,
+      message: "กรุณาแนบไฟล์หลักฐานการเรียนหรือการทำงานในมหาวิทยาลัย",
+    };
+  }
+
+  const [university, faculty] = await Promise.all([
+    prisma.university.findUnique({ where: { universityId } }),
+    prisma.faculty.findFirst({ where: { facultyId, universityId } }),
+  ]);
+
+  if (!university || !faculty) {
+    return { ok: false, message: "ไม่พบข้อมูลมหาวิทยาลัยหรือคณะที่เลือก" };
+  }
+
+  let majorId: number | null = null;
+  if (majorIdRaw) {
+    const major = await prisma.major.findFirst({
+      where: { majorId: majorIdRaw, facultyId },
+    });
+    if (major) majorId = major.majorId;
+  }
+
+  // Generate 10-digit User ID: [2-digit BE year][2-digit uni code][2-digit faculty code][4-digit running]
+  const digits = academicYear.replace(/\D/g, "");
+  const yy = digits.length >= 2 ? digits.slice(-2) : digits.padStart(2, "0");
+  const prefix = `${yy}${university.code.padStart(2, "0").slice(-2)}${faculty.code.padStart(2, "0").slice(-2)}`;
+
+  const existingWithPrefix = await prisma.user.findMany({
+    where: { userId: { startsWith: prefix } },
+    select: { userId: true },
+  });
+
+  const generatedUserId = generateNextUserCode(
+    academicYear,
+    university.code,
+    faculty.code,
+    existingWithPrefix.map((u) => u.userId)
+  );
+
+  // Save uploaded evidence file to public/uploads/evidence/
+  const bytes = await evidence.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+  const ext = path.extname(evidence.name).toLowerCase() || ".jpg";
+  const fileName = `ev_${Date.now()}_${Math.floor(Math.random() * 10000)}${ext}`;
+  const evidenceDir = path.join(process.cwd(), "public", "uploads", "evidence");
+  await mkdir(evidenceDir, { recursive: true });
+  await writeFile(path.join(evidenceDir, fileName), buffer);
+  const evidencePath = `/uploads/evidence/${fileName}`;
+
+  const role: Role = roleRaw === "teacher" ? Role.teacher : Role.student;
+  const institutionLabel = `${university.name} / ${faculty.name}`;
+
+  await prisma.user.create({
+    data: {
+      userId: generatedUserId,
+      username: generatedUserId,
+      password,
+      role,
+      status: AccountStatus.pending,
+      userFname,
+      userLname,
+      userTel,
+      institution: institutionLabel,
+      universityId: university.universityId,
+      facultyId: faculty.facultyId,
+      majorId,
+      academicYear,
+      evidenceFile: evidencePath,
+    },
+  });
+
+  revalidatePath("/admin/approvals");
+  revalidatePath("/admin/users");
+
+  return {
+    ok: true,
+    message: `ส่งคำขอสมัครสมาชิกเรียบร้อยแล้ว รหัสผู้ใช้ของคุณคือ ${generatedUserId} (ใช้งานได้เมื่อผู้ดูแลระบบอนุมัติ)`,
+  };
+}
+
+export async function adminUpdateAccountStatusAction(
+  userId: string,
+  status: "approved" | "rejected"
+): Promise<ActionResult> {
+  const session = await getSessionUser();
+  if (!session || session.role !== "admin") {
+    return { ok: false, message: "คุณไม่มีสิทธิเข้าถึง" };
+  }
+
+  await prisma.user.update({
+    where: { userId },
+    data: {
+      status:
+        status === "approved"
+          ? AccountStatus.approved
+          : AccountStatus.rejected,
+    },
+  });
+
+  revalidatePath("/admin/approvals");
+  revalidatePath("/admin/users");
+  return {
+    ok: true,
+    message:
+      status === "approved"
+        ? "อนุมัติบัญชีผู้ใช้งานเรียบร้อยแล้ว"
+        : "ปฏิเสธคำขอสมัครสมาชิกแล้ว",
+  };
 }
 
 export async function logoutAction(): Promise<ActionResult> {
@@ -233,19 +387,35 @@ export async function createWorkplaceAction(formData: FormData): Promise<ActionR
 
   const workplaceName = String(formData.get("workplace_name") || "").trim();
   const workType = String(formData.get("work_type") || "").trim();
+  const workModeRaw = String(formData.get("work_mode") || "onsite").trim();
+  const provinceRaw = String(formData.get("province") || "").trim();
   const description = String(formData.get("description") || "").trim();
   const workTel = String(formData.get("work_tel") || "").trim();
   const workplaceAddress = String(formData.get("workplace_address") || "").trim();
   const map = String(formData.get("map") || "").trim();
 
+  const workMode: WorkMode =
+    workModeRaw === "remote"
+      ? WorkMode.remote
+      : workModeRaw === "hybrid"
+        ? WorkMode.hybrid
+        : WorkMode.onsite;
+  const province = workMode === WorkMode.remote ? null : provinceRaw || null;
+
   if (!workplaceName || !workplaceAddress) {
     return { ok: false, message: "กรุณากรอกชื่อและที่อยู่สถานประกอบการ" };
+  }
+
+  if (workMode !== WorkMode.remote && !province) {
+    return { ok: false, message: "กรุณาเลือกจังหวัดสำหรับรูปแบบ Onsite / Hybrid" };
   }
 
   const created = await prisma.workplace.create({
     data: {
       workplaceName,
       workType,
+      workMode,
+      province,
       description,
       workTel,
       workplaceAddress,
@@ -292,13 +462,27 @@ export async function updateWorkplaceAction(formData: FormData): Promise<ActionR
   const workplaceId = Number(formData.get("workplace_id"));
   const workplaceName = String(formData.get("workplace_name") || "").trim();
   const workType = String(formData.get("work_type") || "").trim();
+  const workModeRaw = String(formData.get("work_mode") || "onsite").trim();
+  const provinceRaw = String(formData.get("province") || "").trim();
   const description = String(formData.get("description") || "").trim();
   const workTel = String(formData.get("work_tel") || "").trim();
   const workplaceAddress = String(formData.get("workplace_address") || "").trim();
   const map = String(formData.get("map") || "").trim();
 
+  const workMode: WorkMode =
+    workModeRaw === "remote"
+      ? WorkMode.remote
+      : workModeRaw === "hybrid"
+        ? WorkMode.hybrid
+        : WorkMode.onsite;
+  const province = workMode === WorkMode.remote ? null : provinceRaw || null;
+
   if (!workplaceId || !workplaceName) {
     return { ok: false, message: "ข้อมูลไม่ครบถ้วน" };
+  }
+
+  if (workMode !== WorkMode.remote && !province) {
+    return { ok: false, message: "กรุณาเลือกจังหวัดสำหรับรูปแบบ Onsite / Hybrid" };
   }
 
   await prisma.workplace.update({
@@ -306,6 +490,8 @@ export async function updateWorkplaceAction(formData: FormData): Promise<ActionR
     data: {
       workplaceName,
       workType,
+      workMode,
+      province,
       description,
       workTel,
       workplaceAddress,

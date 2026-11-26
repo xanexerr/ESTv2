@@ -2,13 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --bg: #F8F9FA;
+  --surface: #FFFFFF;
+  --surface-muted: #F1F3F5;
+  --ink-primary: #111827;
+  --ink-secondary: #374151;
+  --ink-muted: #525B69;
+  --line: rgba(17, 24, 39, 0.10);
+  --line-strong: rgba(17, 24, 39, 0.18);
+  --brand: #0F766E;
+  --brand-hover: #0D5E58;
+  --brand-subtle: #E6F4F3;
+}
+
+.dark {
+  --bg: #0B0F14;
+  --surface: #131922;
+  --surface-muted: #1B2330;
+  --ink-primary: #F3F4F6;
+  --ink-secondary: #CBD5E1;
+  --ink-muted: #94A3B8;
+  --line: rgba(255, 255, 255, 0.10);
+  --line-strong: rgba(255, 255, 255, 0.18);
+  --brand: #14B8A6;
+  --brand-hover: #0D9488;
+  --brand-subtle: rgba(20, 184, 166, 0.14);
+}
+
 @layer base {
   body {
-    @apply bg-ssp-bg text-slate-800 antialiased min-h-screen flex flex-col;
-    font-family: 'IBM Plex Sans Thai', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-image:
-      radial-gradient(circle at 10% 10%, rgba(19, 111, 115, 0.05) 0%, transparent 45%),
-      radial-gradient(circle at 90% 80%, rgba(255, 183, 43, 0.06) 0%, transparent 45%);
-    background-attachment: fixed;
+    background-color: var(--bg);
+    color: var(--ink-primary);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: 'IBM Plex Sans Thai', system-ui, -apple-system, sans-serif;
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
   }
 }

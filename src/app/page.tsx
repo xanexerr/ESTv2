@@ -1,22 +1,17 @@
 import React from "react";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { WORK_TYPES, getWorkTypeMeta } from "@/lib/constants";
-import { WorkTypeIcon, WorkTypeBadge, StarRating } from "@/components/WorkTypeIcon";
+import { WORK_TYPES, getWorkModeLabel } from "@/lib/constants";
+import { WorkTypeBadge, StarRating } from "@/components/WorkTypeIcon";
+import { SortSelectClient } from "@/components/SortSelectClient";
 import {
   Search,
-  Award,
-  Flame,
-  Building2,
   MapPin,
-  MessageSquare,
-  GraduationCap,
   ChevronRight,
   ChevronLeft,
   LayoutGrid,
   Table as TableIcon,
   RotateCcw,
-  Sparkles,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -40,7 +35,6 @@ export default async function HomePage({
   const currentPage = Math.max(1, Number(sp.page) || 1);
   const limit = 15;
 
-  // Build Prisma where filter
   const where: any = { show: true };
   if (workTypeFilter) {
     where.workType = workTypeFilter;
@@ -53,7 +47,6 @@ export default async function HomePage({
     ];
   }
 
-  // Determine ordering
   let orderBy: any = { workplaceId: "desc" };
   if (sorting === "oldest") {
     orderBy = { workplaceId: "asc" };
@@ -84,41 +77,21 @@ export default async function HomePage({
   const totalPages = Math.max(1, Math.ceil(totalRows / limit));
   const isFiltered = searchQuery !== "" || workTypeFilter !== "";
 
-  // Fetch Top 3 Most Recommended & Top 3 Most Popular when not filtered
   let topRated: typeof workplaces = [];
-  let topPopular: typeof workplaces = [];
   if (!isFiltered && currentPage === 1) {
-    [topRated, topPopular] = await Promise.all([
-      prisma.workplace.findMany({
-        where: { show: true },
-        orderBy: [{ rating: "desc" }, { workplaceId: "desc" }],
-        take: 3,
-        include: {
-          _count: {
-            select: {
-              selectedByUsers: true,
-              comments: { where: { show: true } },
-            },
+    topRated = await prisma.workplace.findMany({
+      where: { show: true },
+      orderBy: [{ rating: "desc" }, { workplaceId: "desc" }],
+      take: 3,
+      include: {
+        _count: {
+          select: {
+            selectedByUsers: true,
+            comments: { where: { show: true } },
           },
         },
-      }),
-      prisma.workplace.findMany({
-        where: { show: true },
-        orderBy: [
-          { selectedByUsers: { _count: "desc" } },
-          { rating: "desc" },
-        ],
-        take: 3,
-        include: {
-          _count: {
-            select: {
-              selectedByUsers: true,
-              comments: { where: { show: true } },
-            },
-          },
-        },
-      }),
-    ]);
+      },
+    });
   }
 
   function buildUrl(overrides: Record<string, string | number | undefined>) {
@@ -141,398 +114,310 @@ export default async function HomePage({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Hero Banner & Search Bar */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-ssp-dark via-ssp-primary to-teal-600 text-white p-6 sm:p-8 shadow-lg">
-        <div className="flex flex-wrap justify-between items-end gap-4 mb-5">
-          <div>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-ssp-amber/20 text-ssp-amber border border-ssp-amber/40 mb-2.5">
-              <Sparkles className="w-3.5 h-3.5" /> HTC Internship Discovery
-            </span>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              ค้นหาสถานประกอบการฝึกประสบการณ์วิชาชีพ
+    <div className="space-y-5">
+      {/* Compact Header & Search + Top Rated Strip (Zero wasted whitespace) */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+        <div className="lg:col-span-8 bg-paper-surface border border-line rounded-xl p-4 sm:p-5 flex flex-col justify-between gap-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h1 className="text-xl sm:text-2xl font-semibold text-ink-primary tracking-tight">
+              สถานประกอบการฝึกงาน
             </h1>
-            <p className="text-sm text-white/80 mt-1">
-              รวบรวมข้อมูลสถานที่ฝึกงาน รีวิวจากรุ่นพี่ และคะแนนประเมินสำหรับนักศึกษาแผนกเทคโนโลยีสารสนเทศ
-            </p>
+            <span className="text-xs font-mono tabular-nums text-ink-muted">
+              {totalRows} แห่ง
+            </span>
           </div>
-          <div className="text-sm text-white/80">
-            พบสถานประกอบการทั้งหมด{" "}
-            <strong className="text-white text-lg font-bold">{totalRows}</strong> แห่ง
-          </div>
+
+          <form method="GET" action="/" className="space-y-3">
+            <input type="hidden" name="view" value={viewMode} />
+            {workTypeFilter && (
+              <input type="hidden" name="work_type_filter" value={workTypeFilter} />
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+              <div className="sm:col-span-6 relative">
+                <Search
+                  strokeWidth={1.5}
+                  aria-hidden="true"
+                  className="w-4 h-4 text-ink-muted absolute left-3 top-3.5 sm:top-3"
+                />
+                <input
+                  type="text"
+                  name="search_query"
+                  defaultValue={searchQuery}
+                  aria-label="ค้นหาสถานประกอบการ"
+                  placeholder="ค้นหาชื่อบริษัท หรือลักษณะงาน"
+                  className="w-full min-h-[44px] sm:min-h-0 sm:h-10 pl-9 pr-3 text-sm bg-paper-bg border border-line-strong rounded-lg text-ink-primary placeholder:text-ink-muted focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+                />
+              </div>
+
+              <div className="sm:col-span-4">
+                <SortSelectClient defaultValue={sorting} />
+              </div>
+
+              <div className="sm:col-span-2">
+                <button
+                  type="submit"
+                  className="w-full min-h-[44px] sm:min-h-0 sm:h-10 px-4 rounded-lg bg-brand hover:bg-brand-hover text-white dark:text-zinc-950 text-sm font-medium transition-colors duration-150"
+                >
+                  ค้นหา
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Link
+                href={buildUrl({ work_type_filter: undefined, page: 1 })}
+                className={`inline-flex items-center gap-1.5 min-h-[40px] sm:min-h-0 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                  workTypeFilter === ""
+                    ? "bg-brand text-white dark:text-zinc-950 border-brand"
+                    : "bg-paper-bg text-ink-secondary border-line hover:text-ink-primary"
+                }`}
+              >
+                ทั้งหมด
+              </Link>
+              {WORK_TYPES.map((t) => {
+                const active = workTypeFilter === t.key;
+                return (
+                  <Link
+                    key={t.key}
+                    href={buildUrl({ work_type_filter: t.key, page: 1 })}
+                    className={`inline-flex items-center gap-1.5 min-h-[40px] sm:min-h-0 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                      active
+                        ? "bg-brand text-white dark:text-zinc-950 border-brand"
+                        : "bg-paper-bg text-ink-secondary border-line hover:text-ink-primary"
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: active ? "currentColor" : t.dotColor }}
+                    />
+                    {t.label}
+                  </Link>
+                );
+              })}
+
+              {isFiltered && (
+                <Link
+                  href="/"
+                  className="inline-flex items-center gap-1 min-h-[40px] sm:min-h-0 px-2.5 py-1.5 rounded-lg text-xs font-medium text-ink-secondary hover:text-ink-primary ml-auto"
+                >
+                  <RotateCcw strokeWidth={1.5} className="w-3.5 h-3.5" />
+                  ล้างตัวกรอง
+                </Link>
+              )}
+            </div>
+          </form>
         </div>
 
-        {/* Search & Filter Form */}
-        <form method="GET" action="/" className="bg-white rounded-xl p-2 shadow-xl text-slate-800">
-          <input type="hidden" name="view" value={viewMode} />
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center">
-            <div className="md:col-span-5 flex items-center gap-2 px-3 py-1.5">
-              <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
-              <input
-                type="text"
-                name="search_query"
-                defaultValue={searchQuery}
-                placeholder="ค้นหาชื่อสถานประกอบการ, ลักษณะงาน, หรือพื้นที่..."
-                className="w-full text-sm bg-transparent focus:outline-none text-slate-800 placeholder:text-slate-400"
-              />
-            </div>
-
-            <div className="md:col-span-3">
-              <select
-                name="work_type_filter"
-                defaultValue={workTypeFilter}
-                className="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:border-ssp-primary"
-              >
-                <option value="">ประเภทงาน : ทั้งหมด</option>
-                {WORK_TYPES.map((t) => (
-                  <option key={t.key} value={t.key}>
-                    ประเภทงาน : {t.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="md:col-span-2">
-              <select
-                name="sorting"
-                defaultValue={sorting}
-                className="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:border-ssp-primary"
-              >
-                <option value="newest">เรียงจากที่เพิ่มล่าสุด</option>
-                <option value="oldest">เรียงจากที่เพิ่มนานสุด</option>
-                <option value="highscore">เรียงจากคะแนนรีวิว</option>
-                <option value="popular">เรียงจากความนิยม</option>
-              </select>
-            </div>
-
-            <div className="md:col-span-2">
-              <button
-                type="submit"
-                className="w-full inline-flex items-center justify-center gap-2 bg-ssp-primary hover:bg-ssp-dark text-white font-semibold text-sm py-2.5 px-4 rounded-lg transition shadow-sm"
-              >
-                <Search className="w-4 h-4" /> ค้นหา
-              </button>
-            </div>
+        {/* Compact Top 3 Rated Directory */}
+        <div className="lg:col-span-4 bg-paper-surface border border-line rounded-xl p-4 flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-2 mb-1 border-b border-line">
+            <h2 className="text-xs font-semibold text-ink-primary">
+              คะแนนรีวิวสูงสุด
+            </h2>
+            <span className="text-xs font-mono text-ink-muted">Top 3</span>
           </div>
-        </form>
-
-        {/* Quick Category Filter Pills */}
-        <div className="flex flex-wrap items-center gap-2 mt-4">
-          <Link
-            href={buildUrl({ work_type_filter: undefined, page: 1 })}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium border transition ${
-              workTypeFilter === ""
-                ? "bg-ssp-amber text-slate-900 border-ssp-amber font-semibold shadow-sm"
-                : "bg-white/15 text-white border-white/25 hover:bg-white/25"
-            }`}
-          >
-            ทั้งหมด
-          </Link>
-          {WORK_TYPES.map((t) => (
-            <Link
-              key={t.key}
-              href={buildUrl({ work_type_filter: t.key, page: 1 })}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium border transition ${
-                workTypeFilter === t.key
-                  ? "bg-ssp-amber text-slate-900 border-ssp-amber font-semibold shadow-sm"
-                  : "bg-white/15 text-white border-white/25 hover:bg-white/25"
-              }`}
-            >
-              <WorkTypeIcon type={t.key} className="w-3.5 h-3.5" />
-              {t.label}
-            </Link>
-          ))}
-
-          {isFiltered && (
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-red-500/90 hover:bg-red-600 text-white ml-auto transition"
-            >
-              <RotateCcw className="w-3.5 h-3.5" /> ล้างตัวกรอง
-            </Link>
-          )}
+          <div className="divide-y divide-line">
+            {(topRated.length > 0 ? topRated : workplaces.slice(0, 3)).map(
+              (item, idx) => (
+                <Link
+                  key={`top-${item.workplaceId}`}
+                  href={`/workplaces/${item.workplaceId}`}
+                  className="flex items-center justify-between gap-2 py-2 group"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="font-mono text-xs text-ink-muted tabular-nums">
+                      0{idx + 1}
+                    </span>
+                    <span className="text-xs font-medium text-ink-primary group-hover:text-brand truncate transition-colors">
+                      {item.workplaceName}
+                    </span>
+                  </div>
+                  <span className="font-mono text-xs font-semibold tabular-nums text-brand flex-shrink-0">
+                    {item.rating > 0 ? item.rating.toFixed(1) : "—"}
+                  </span>
+                </Link>
+              )
+            )}
+          </div>
         </div>
       </section>
 
-      {/* Top 3 Highlights (SeniorStepPass Style: Most Recommended & Most Selected) */}
-      {!isFiltered && currentPage === 1 && (topRated.length > 0 || topPopular.length > 0) && (
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {/* Most Recommended */}
-          <div className="rounded-xl border border-amber-200/80 bg-gradient-to-b from-white to-ssp-cream/40 shadow-sm overflow-hidden">
-            <div className="bg-gradient-to-r from-ssp-primary to-teal-600 text-white px-4 py-3 flex items-center justify-between">
-              <span className="font-semibold text-sm flex items-center gap-2">
-                <Award className="w-4 h-4 text-ssp-amber" /> แนะนำสูงสุด (Most Recommended)
-              </span>
-              <span className="text-xs font-semibold bg-white text-slate-800 px-2.5 py-0.5 rounded-full">
-                Top 3 คะแนนรีวิว
-              </span>
-            </div>
-            <div className="p-3 divide-y divide-slate-200/70">
-              {topRated.map((item, idx) => (
-                <Link
-                  key={item.workplaceId}
-                  href={`/workplaces/${item.workplaceId}`}
-                  className="flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-white/80 transition group"
-                >
-                  <span
-                    className={`w-8 h-8 rounded-full text-xs font-bold text-white flex items-center justify-center flex-shrink-0 ${
-                      idx === 0
-                        ? "bg-amber-500 shadow-sm"
-                        : idx === 1
-                        ? "bg-slate-500"
-                        : "bg-amber-700"
-                    }`}
-                  >
-                    #{idx + 1}
-                  </span>
-                  <div className="flex-grow min-w-0">
-                    <div className="font-bold text-sm text-slate-800 truncate group-hover:text-ssp-primary">
-                      {item.workplaceName}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 mt-1">
-                      <WorkTypeBadge type={item.workType} />
-                      <span className="text-xs text-slate-600 inline-flex items-center gap-1">
-                        <StarRating rating={item.rating} />
-                        <strong className="ml-0.5">{item.rating.toFixed(1)}</strong>
-                        <span className="text-slate-400">
-                          ({item._count.comments} รีวิว)
-                        </span>
-                      </span>
-                    </div>
-                  </div>
-                  <span className="text-xs text-slate-500 group-hover:text-ssp-primary inline-flex items-center gap-1 flex-shrink-0">
-                    ดูข้อมูล <ChevronRight className="w-3.5 h-3.5" />
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* Most Selected */}
-          <div className="rounded-xl border border-amber-200/80 bg-gradient-to-b from-white to-ssp-cream/40 shadow-sm overflow-hidden">
-            <div className="bg-gradient-to-r from-ssp-primary to-teal-600 text-white px-4 py-3 flex items-center justify-between">
-              <span className="font-semibold text-sm flex items-center gap-2">
-                <Flame className="w-4 h-4 text-ssp-amber" /> ยอดนิยม (Most Selected)
-              </span>
-              <span className="text-xs font-semibold bg-white text-slate-800 px-2.5 py-0.5 rounded-full">
-                Top 3 นักศึกษาเลือก
-              </span>
-            </div>
-            <div className="p-3 divide-y divide-slate-200/70">
-              {topPopular.map((item, idx) => (
-                <Link
-                  key={item.workplaceId}
-                  href={`/workplaces/${item.workplaceId}`}
-                  className="flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-white/80 transition group"
-                >
-                  <span
-                    className={`w-8 h-8 rounded-full text-xs font-bold text-white flex items-center justify-center flex-shrink-0 ${
-                      idx === 0
-                        ? "bg-amber-500 shadow-sm"
-                        : idx === 1
-                        ? "bg-slate-500"
-                        : "bg-amber-700"
-                    }`}
-                  >
-                    #{idx + 1}
-                  </span>
-                  <div className="flex-grow min-w-0">
-                    <div className="font-bold text-sm text-slate-800 truncate group-hover:text-ssp-primary">
-                      {item.workplaceName}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 mt-1">
-                      <WorkTypeBadge type={item.workType} />
-                      <span className="text-xs text-slate-600 inline-flex items-center gap-1">
-                        <GraduationCap className="w-3.5 h-3.5 text-ssp-primary" />
-                        <strong>{item._count.selectedByUsers}</strong> คนเลือก
-                      </span>
-                    </div>
-                  </div>
-                  <span className="text-xs text-slate-500 group-hover:text-ssp-primary inline-flex items-center gap-1 flex-shrink-0">
-                    ดูข้อมูล <ChevronRight className="w-3.5 h-3.5" />
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* List Header & View Switcher */}
-      <div className="flex flex-wrap justify-between items-center gap-3">
+      {/* Toolbar: Results + View Switcher */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Building2 className="w-5 h-5 text-ssp-primary" />
-          <h2 className="text-lg font-bold text-slate-800">รายชื่อสถานประกอบการ</h2>
-          {workTypeFilter && (
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-ssp-primary text-white">
-              {workTypeFilter}
-            </span>
-          )}
+          <h2 className="text-sm font-semibold text-ink-primary">รายการทั้งหมด</h2>
+          {workTypeFilter && <WorkTypeBadge type={workTypeFilter} />}
           {searchQuery && (
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-200 text-slate-700">
-              ค้นหา: &ldquo;{searchQuery}&rdquo;
+            <span className="text-xs text-ink-secondary">
+              &ldquo;{searchQuery}&rdquo;
             </span>
           )}
         </div>
 
-        <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm">
+        <div className="inline-flex rounded-lg border border-line bg-paper-surface p-0.5">
           <Link
             href={buildUrl({ view: "card" })}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition ${
+            className={`inline-flex items-center gap-1.5 min-h-[38px] sm:min-h-0 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
               viewMode === "card"
-                ? "bg-ssp-primary text-white"
-                : "text-slate-600 hover:text-ssp-primary"
+                ? "bg-paper-muted text-ink-primary font-semibold"
+                : "text-ink-muted hover:text-ink-primary"
             }`}
           >
-            <LayoutGrid className="w-3.5 h-3.5" /> การ์ด
+            <LayoutGrid strokeWidth={1.5} className="w-3.5 h-3.5" />
+            การ์ด
           </Link>
           <Link
             href={buildUrl({ view: "table" })}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition ${
+            className={`inline-flex items-center gap-1.5 min-h-[38px] sm:min-h-0 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
               viewMode === "table"
-                ? "bg-ssp-primary text-white"
-                : "text-slate-600 hover:text-ssp-primary"
+                ? "bg-paper-muted text-ink-primary font-semibold"
+                : "text-ink-muted hover:text-ink-primary"
             }`}
           >
-            <TableIcon className="w-3.5 h-3.5" /> ตาราง
+            <TableIcon strokeWidth={1.5} className="w-3.5 h-3.5" />
+            ตาราง
           </Link>
         </div>
       </div>
 
-      {/* Empty State */}
+      {/* Workplaces Grid / Table */}
       {workplaces.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center shadow-sm">
-          <Building2 className="w-12 h-12 text-red-500 mx-auto mb-3 opacity-80" />
-          <h3 className="text-lg font-bold text-red-600">ไม่พบสถานประกอบการ!</h3>
-          <p className="text-sm text-slate-500 mt-1 mb-4">
-            ไม่พบข้อมูลที่ตรงกับคำค้นหาหรือตัวกรองที่คุณเลือก
+        <div className="bg-paper-surface border border-line rounded-xl p-10 text-center">
+          <p className="text-sm font-medium text-ink-primary mb-3">
+            ไม่พบสถานประกอบการที่ตรงกับเงื่อนไข
           </p>
           <Link
             href="/"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-ssp-primary text-white text-sm font-semibold hover:bg-ssp-dark transition"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand text-white dark:text-zinc-950 text-xs font-medium"
           >
-            <RotateCcw className="w-4 h-4" /> แสดงสถานประกอบการทั้งหมด
+            <RotateCcw strokeWidth={1.5} className="w-3.5 h-3.5" />
+            ล้างตัวกรอง
           </Link>
         </div>
       ) : viewMode === "card" ? (
-        /* Modern Card Grid View */
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {workplaces.map((row) => {
-            const meta = getWorkTypeMeta(row.workType);
-            return (
-              <div
-                key={row.workplaceId}
-                className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:border-ssp-primary/40 transition flex flex-col justify-between"
-              >
-                <div className="flex gap-3.5">
-                  <div
-                    className="w-13 h-13 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{
-                      width: 52,
-                      height: 52,
-                      background: meta.bg,
-                      color: meta.color,
-                    }}
-                  >
-                    <WorkTypeIcon type={row.workType} className="w-6 h-6" />
-                  </div>
-                  <div className="flex-grow min-w-0">
-                    <div className="flex justify-between items-start gap-2">
-                      <Link
-                        href={`/workplaces/${row.workplaceId}`}
-                        className="font-bold text-base text-slate-800 hover:text-ssp-primary truncate"
-                      >
-                        {row.workplaceName}
-                      </Link>
-                      <WorkTypeBadge type={row.workType} />
-                    </div>
-                    <p className="text-xs text-slate-600 mt-1.5 line-clamp-2">
-                      {row.description || "ไม่มีรายละเอียดลักษณะงาน"}
-                    </p>
-                    {row.workplaceAddress && (
-                      <div className="text-xs text-slate-400 mt-2 flex items-center gap-1 truncate">
-                        <MapPin className="w-3.5 h-3.5 text-ssp-primary flex-shrink-0" />
-                        <span className="truncate">{row.workplaceAddress}</span>
-                      </div>
-                    )}
-                  </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {workplaces.map((row) => (
+            <article
+              key={row.workplaceId}
+              className="bg-paper-surface border border-line hover:border-line-strong rounded-xl p-4 flex flex-col justify-between gap-3 transition-colors duration-150"
+            >
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono text-xs text-ink-muted tabular-nums">
+                    #{String(row.workplaceId).padStart(3, "0")}
+                  </span>
+                  <WorkTypeBadge type={row.workType} />
                 </div>
 
-                <div className="flex flex-wrap justify-between items-center gap-2 pt-3 mt-3 border-t border-slate-100">
-                  <div className="flex items-center gap-3 text-xs text-slate-500">
-                    {row.rating > 0 ? (
-                      <span className="inline-flex items-center gap-1">
-                        <StarRating rating={row.rating} />
-                        <strong className="text-slate-700">
-                          {row.rating.toFixed(1)}
-                        </strong>
-                      </span>
-                    ) : (
-                      <span>ยังไม่มีคะแนน</span>
-                    )}
-                    <span className="inline-flex items-center gap-1">
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      {row._count.comments} รีวิว
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <GraduationCap className="w-3.5 h-3.5" />
-                      {row._count.selectedByUsers} คน
-                    </span>
-                  </div>
-
+                <h3 className="text-base font-semibold text-ink-primary leading-snug">
                   <Link
                     href={`/workplaces/${row.workplaceId}`}
-                    className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-ssp-primary hover:bg-ssp-dark text-white text-xs font-semibold transition"
+                    className="hover:text-brand transition-colors"
                   >
-                    รายละเอียด <ChevronRight className="w-3.5 h-3.5" />
+                    {row.workplaceName}
                   </Link>
+                </h3>
+
+                <p className="text-xs text-ink-secondary line-clamp-2 leading-relaxed">
+                  {row.description || "ไม่มีรายละเอียด"}
+                </p>
+
+                <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded-md font-medium border ${
+                      row.workMode === "remote"
+                        ? "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/50 dark:text-violet-300 dark:border-violet-800"
+                        : row.workMode === "hybrid"
+                          ? "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-800"
+                          : "bg-paper-muted text-ink-secondary border-line"
+                    }`}
+                  >
+                    {getWorkModeLabel(row.workMode)}
+                  </span>
+                  {row.workMode !== "remote" && row.province && (
+                    <span className="inline-flex items-center gap-1 text-ink-muted">
+                      <MapPin
+                        strokeWidth={1.5}
+                        aria-hidden="true"
+                        className="w-3.5 h-3.5 flex-shrink-0"
+                      />
+                      จ.{row.province}
+                    </span>
+                  )}
                 </div>
+
+                {row.workplaceAddress && (
+                  <div className="flex items-center gap-1.5 text-xs text-ink-muted">
+                    <span className="truncate">{row.workplaceAddress}</span>
+                  </div>
+                )}
               </div>
-            );
-          })}
+
+              <div className="flex items-center justify-between gap-2 pt-3 border-t border-line text-xs">
+                <div className="flex items-center gap-2.5 text-ink-muted font-mono tabular-nums">
+                  {row.rating > 0 ? (
+                    <span className="inline-flex items-center gap-1 text-ink-primary font-medium">
+                      <StarRating rating={row.rating} />
+                      {row.rating.toFixed(1)}
+                    </span>
+                  ) : (
+                    <span>—</span>
+                  )}
+                  <span>{row._count.comments} รีวิว</span>
+                  <span>{row._count.selectedByUsers} คน</span>
+                </div>
+
+                <Link
+                  href={`/workplaces/${row.workplaceId}`}
+                  className="inline-flex items-center gap-1 min-h-[38px] sm:min-h-0 px-2.5 py-1.5 rounded-lg border border-line-strong bg-paper-bg hover:border-brand hover:text-brand font-medium text-ink-primary transition-colors flex-shrink-0"
+                >
+                  รายละเอียด
+                  <ChevronRight strokeWidth={1.5} className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </article>
+          ))}
         </div>
       ) : (
-        /* Table View */
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+        <div className="bg-paper-surface border border-line rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 text-slate-600 text-xs uppercase border-b border-slate-200">
+              <thead className="bg-paper-muted text-ink-secondary text-xs font-medium border-b border-line">
                 <tr>
-                  <th className="py-3.5 px-4">ชื่อสถานประกอบการ</th>
-                  <th className="py-3.5 px-4">ประเภทงาน</th>
-                  <th className="py-3.5 px-4">ลักษณะงาน</th>
-                  <th className="py-3.5 px-4 text-center">คะแนนรีวิว</th>
-                  <th className="py-3.5 px-4 text-center">จัดการ</th>
+                  <th className="py-2.5 px-4 font-mono w-20">รหัส</th>
+                  <th className="py-2.5 px-4">ชื่อสถานประกอบการ</th>
+                  <th className="py-2.5 px-4">ประเภทงาน</th>
+                  <th className="py-2.5 px-4">ลักษณะงาน</th>
+                  <th className="py-2.5 px-4 text-right">คะแนน</th>
+                  <th className="py-2.5 px-4 text-right">จัดการ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-line">
                 {workplaces.map((row) => (
-                  <tr key={row.workplaceId} className="hover:bg-slate-50">
-                    <td className="py-3.5 px-4 font-semibold text-slate-800">
+                  <tr
+                    key={row.workplaceId}
+                    className="hover:bg-paper-bg transition-colors"
+                  >
+                    <td className="py-3 px-4 font-mono text-xs text-ink-muted tabular-nums">
+                      #{String(row.workplaceId).padStart(3, "0")}
+                    </td>
+                    <td className="py-3 px-4 font-medium text-ink-primary">
                       {row.workplaceName}
                     </td>
-                    <td className="py-3.5 px-4">
+                    <td className="py-3 px-4">
                       <WorkTypeBadge type={row.workType} />
                     </td>
-                    <td className="py-3.5 px-4 text-slate-600 max-w-md">
+                    <td className="py-3 px-4 text-ink-secondary text-xs max-w-md truncate">
                       {row.description}
                     </td>
-                    <td className="py-3.5 px-4 text-center">
-                      {row.rating > 0 ? (
-                        <div className="inline-flex flex-col items-center">
-                          <StarRating rating={row.rating} />
-                          <span className="text-xs text-slate-500 mt-0.5">
-                            {row.rating.toFixed(1)} / 5.0
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-slate-400">ยังไม่มีคะแนน</span>
-                      )}
+                    <td className="py-3 px-4 text-right font-mono text-xs tabular-nums">
+                      {row.rating > 0 ? row.rating.toFixed(1) : "—"}
                     </td>
-                    <td className="py-3.5 px-4 text-center">
+                    <td className="py-3 px-4 text-right">
                       <Link
                         href={`/workplaces/${row.workplaceId}`}
-                        className="inline-flex items-center px-3 py-1.5 rounded-full bg-ssp-primary hover:bg-ssp-dark text-white text-xs font-semibold transition"
+                        className="text-brand hover:underline font-medium text-xs"
                       >
                         รายละเอียด
                       </Link>
@@ -547,23 +432,24 @@ export default async function HomePage({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-1 pt-2">
+        <div className="flex justify-center items-center gap-1 pt-1">
           {currentPage > 1 && (
             <Link
               href={buildUrl({ page: currentPage - 1 })}
-              className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-ssp-primary hover:text-ssp-primary"
+              aria-label="หน้าก่อนหน้า"
+              className="p-2 rounded-lg border border-line bg-paper-surface text-ink-secondary hover:text-ink-primary"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft strokeWidth={1.5} className="w-4 h-4" />
             </Link>
           )}
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
             <Link
               key={p}
               href={buildUrl({ page: p })}
-              className={`px-3.5 py-1.5 rounded-lg text-sm font-medium border transition ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono tabular-nums border transition-colors ${
                 p === currentPage
-                  ? "bg-ssp-primary text-white border-ssp-primary"
-                  : "bg-white text-slate-700 border-slate-200 hover:border-ssp-primary"
+                  ? "bg-brand text-white dark:text-zinc-950 border-brand font-medium"
+                  : "bg-paper-surface text-ink-secondary border-line hover:text-ink-primary"
               }`}
             >
               {p}
@@ -572,9 +458,10 @@ export default async function HomePage({
           {currentPage < totalPages && (
             <Link
               href={buildUrl({ page: currentPage + 1 })}
-              className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-ssp-primary hover:text-ssp-primary"
+              aria-label="หน้าถัดไป"
+              className="p-2 rounded-lg border border-line bg-paper-surface text-ink-secondary hover:text-ink-primary"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight strokeWidth={1.5} className="w-4 h-4" />
             </Link>
           )}
         </div>

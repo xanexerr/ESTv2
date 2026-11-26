@@ -13,39 +13,226 @@ enum Role {
   student
 }
 
-model Workplace {
-  workplaceId      Int       @id @default(autoincrement()) @map("workplace_id")
-  workplaceName    String    @map("workplace_name")
-  workplaceAddress String    @map("workplace_address")
-  workType         String    @map("work_type")
-  description      String?
-  workTel          String?   @map("work_tel")
-  userId           String?   @map("user_id")
-  rating           Float     @default(0)
-  show             Boolean   @default(true)
-  map              String?
-  createdAt        DateTime  @default(now()) @map("created_at")
+enum AccountStatus {
+  pending
+  approved
+  rejected
+}
 
-  selectedByUsers  User[]    @relation("SelectedWorkplace")
+enum ReportCycle {
+  weekly
+  biweekly
+}
+
+enum InternshipStatus {
+  active
+  completed
+  cancelled
+}
+
+enum ReportStatus {
+  draft
+  submitted
+  reviewed
+  needs_revision
+}
+
+enum WorkMode {
+  onsite
+  remote
+  hybrid
+}
+
+model University {
+  universityId Int       @id @default(autoincrement()) @map("university_id")
+  code         String    @unique
+  name         String
+  shortName    String    @map("short_name")
+
+  faculties    Faculty[]
+  users        User[]
+
+  @@map("universities")
+}
+
+model Faculty {
+  facultyId    Int        @id @default(autoincrement()) @map("faculty_id")
+  universityId Int        @map("university_id")
+  code         String
+  name         String
+
+  university   University @relation(fields: [universityId], references: [universityId], onDelete: Cascade)
+  majors       Major[]
+  users        User[]
+
+  @@unique([universityId, code])
+  @@map("faculties")
+}
+
+model Major {
+  majorId   Int      @id @default(autoincrement()) @map("major_id")
+  facultyId Int      @map("faculty_id")
+  code      String
+  name      String
+
+  faculty   Faculty  @relation(fields: [facultyId], references: [facultyId], onDelete: Cascade)
+  courses   Course[]
+  users     User[]
+
+  @@unique([facultyId, code])
+  @@map("majors")
+}
+
+model Course {
+  courseId   Int            @id @default(autoincrement()) @map("course_id")
+  majorId    Int            @map("major_id")
+  courseCode String         @map("course_code")
+  courseName String         @map("course_name")
+  yearLevel  Int            @default(1) @map("year_level")
+  credits    Int            @default(3)
+
+  major      Major          @relation(fields: [majorId], references: [majorId], onDelete: Cascade)
+  reviews    CourseReview[]
+
+  @@unique([majorId, courseCode])
+  @@map("courses")
+}
+
+model CourseReview {
+  reviewId              Int      @id @default(autoincrement()) @map("review_id")
+  courseId              Int      @map("course_id")
+  userId                String   @map("user_id")
+  contentRating         Int      @map("content_rating")
+  workloadRating        Int      @map("workload_rating")
+  gradeDifficultyRating Int      @map("grade_difficulty_rating")
+  commentText           String   @map("comment_text")
+  academicYear          String   @default("2569") @map("academic_year")
+  semester              String   @default("1")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  course                Course   @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+  user                  User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([courseId, userId])
+  @@map("course_reviews")
+}
+
+model Workplace {
+  workplaceId      Int               @id @default(autoincrement()) @map("workplace_id")
+  workplaceName    String            @map("workplace_name")
+  workplaceAddress String            @map("workplace_address")
+  workType         String            @map("work_type")
+  workMode         WorkMode          @default(onsite) @map("work_mode")
+  province         String?
+  description      String?
+  workTel          String?           @map("work_tel")
+  userId           String?           @map("user_id")
+  rating           Float             @default(0)
+  show             Boolean           @default(true)
+  map              String?
+  createdAt        DateTime          @default(now()) @map("created_at")
+
+  selectedByUsers  User[]            @relation("SelectedWorkplace")
   comments         Comment[]
+  internshipRounds InternshipRound[]
 
   @@map("workplaces")
 }
 
 model User {
-  userId      String     @id @map("user_id")
-  username    String     @unique
-  password    String
-  role        Role       @default(student)
-  userFname   String     @map("user_fname")
-  userLname   String     @map("user_lname")
-  userTel     String?    @default("") @map("user_tel")
-  workplaceId Int?       @map("workplace_id")
+  userId             String            @id @map("user_id")
+  username           String            @unique
+  password           String
+  role               Role              @default(student)
+  status             AccountStatus     @default(approved)
+  userFname          String            @map("user_fname")
+  userLname          String            @map("user_lname")
+  userTel            String?           @default("") @map("user_tel")
+  institution        String?           @default("")
+  universityId       Int?              @map("university_id")
+  facultyId          Int?              @map("faculty_id")
+  majorId            Int?              @map("major_id")
+  academicYear       String?           @default("") @map("academic_year")
+  evidenceFile       String?           @map("evidence_file")
+  workplaceId        Int?              @map("workplace_id")
+  createdAt          DateTime          @default(now()) @map("created_at")
 
-  workplace   Workplace? @relation("SelectedWorkplace", fields: [workplaceId], references: [workplaceId], onDelete: SetNull)
-  comments    Comment[]
+  university         University?       @relation(fields: [universityId], references: [universityId], onDelete: SetNull)
+  faculty            Faculty?          @relation(fields: [facultyId], references: [facultyId], onDelete: SetNull)
+  major              Major?            @relation(fields: [majorId], references: [majorId], onDelete: SetNull)
+  workplace          Workplace?        @relation("SelectedWorkplace", fields: [workplaceId], references: [workplaceId], onDelete: SetNull)
+  comments           Comment[]
+  courseReviews      CourseReview[]
+  studentInternships InternshipRound[] @relation("StudentInternships")
+  advisorInternships InternshipRound[] @relation("AdvisorInternships")
+  reviewedReports    PeriodReport[]    @relation("ReviewedReports")
 
   @@map("users")
+}
+
+model InternshipRound {
+  roundId       Int              @id @default(autoincrement()) @map("round_id")
+  studentId     String           @map("student_id")
+  workplaceId   Int              @map("workplace_id")
+  advisorId     String?          @map("advisor_id")
+  roundNumber   Int              @default(1) @map("round_number")
+  academicYear  String           @map("academic_year")
+  semester      String
+  position      String?
+  startDate     DateTime         @map("start_date")
+  endDate       DateTime?        @map("end_date")
+  reportCycle   ReportCycle      @default(weekly) @map("report_cycle")
+  status        InternshipStatus @default(active)
+  createdAt     DateTime         @default(now()) @map("created_at")
+
+  student       User             @relation("StudentInternships", fields: [studentId], references: [userId], onDelete: Cascade)
+  advisor       User?            @relation("AdvisorInternships", fields: [advisorId], references: [userId], onDelete: SetNull)
+  workplace     Workplace        @relation(fields: [workplaceId], references: [workplaceId], onDelete: Cascade)
+  dailyLogs     DailyLog[]
+  periodReports PeriodReport[]
+
+  @@map("internship_rounds")
+}
+
+model DailyLog {
+  logId           Int             @id @default(autoincrement()) @map("log_id")
+  roundId         Int             @map("round_id")
+  workDate        DateTime        @map("work_date")
+  weekNumber      Int             @map("week_number")
+  tasksAssigned   String          @map("tasks_assigned")
+  knowledgeGained String          @map("knowledge_gained")
+  toolsUsed       String          @default("") @map("tools_used")
+  hoursWorked     Float           @default(8) @map("hours_worked")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  round           InternshipRound @relation(fields: [roundId], references: [roundId], onDelete: Cascade)
+
+  @@unique([roundId, workDate])
+  @@map("daily_logs")
+}
+
+model PeriodReport {
+  reportId        Int             @id @default(autoincrement()) @map("report_id")
+  roundId         Int             @map("round_id")
+  startWeek       Int             @map("start_week")
+  endWeek         Int             @map("end_week")
+  summaryText     String          @map("summary_text")
+  challenges      String?
+  status          ReportStatus    @default(draft)
+  submittedAt     DateTime?       @map("submitted_at")
+  teacherFeedback String?         @map("teacher_feedback")
+  reviewedById    String?         @map("reviewed_by_id")
+  reviewedAt      DateTime?       @map("reviewed_at")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  round           InternshipRound @relation(fields: [roundId], references: [roundId], onDelete: Cascade)
+  reviewedBy      User?           @relation("ReviewedReports", fields: [reviewedById], references: [userId], onDelete: SetNull)
+
+  @@unique([roundId, startWeek, endWeek])
+  @@map("period_reports")
 }
 
 model Comment {

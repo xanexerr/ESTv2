@@ -4,13 +4,22 @@ import { getSessionUser } from "@/lib/auth";
 import { Navbar, Footer } from "@/components/Navbar";
 
 export const metadata: Metadata = {
-  title: "ระบบรวบรวมสถานประกอบการ แผนกเทคโนโลยีสารสนเทศ | วิทยาลัยเทคนิคหาดใหญ่",
+  title: "EST — แพลตฟอร์มสถานประกอบการฝึกงานระดับอุดมศึกษา",
   description:
-    "ระบบรวบรวมสถานประกอบการวิชาชีพ สำหรับนักเรียน นักศึกษา ฝึกประสบการณ์วิชาชีพ แผนกเทคโนโลยีสารสนเทศ วิทยาลัยเทคนิคหาดใหญ่",
-  icons: {
-    icon: "/img/logo_ithtc.png",
-  },
+    "แพลตฟอร์มรวบรวมสถานประกอบการและรีวิวการฝึกงานสำหรับอาจารย์และนักศึกษามหาวิทยาลัย",
 };
+
+const themeInitScript = `
+(function() {
+  try {
+    var saved = localStorage.getItem('est_theme');
+    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (saved === 'dark' || (!saved && prefersDark)) {
+      document.documentElement.classList.add('dark');
+    }
+  } catch (e) {}
+})();
+`;
 
 export default async function RootLayout({
   children,
@@ -20,8 +29,9 @@ export default async function RootLayout({
   const user = await getSessionUser();
 
   return (
-    <html lang="th">
+    <html lang="th" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
@@ -29,13 +39,13 @@ export default async function RootLayout({
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-screen flex flex-col">
+      <body className="min-h-screen flex flex-col bg-paper-bg text-ink-primary">
         <Navbar user={user} />
-        <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <main className="flex-grow max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-5">
           {children}
         </main>
         <Footer isLoggedIn={!!user} />

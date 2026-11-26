@@ -3,14 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import {
-  Users,
-  UserPlus,
-  GraduationCap,
-  Briefcase,
-  ShieldCheck,
-  Search,
-} from "lucide-react";
+import { Plus } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -51,148 +44,124 @@ export default async function AdminUsersPage({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-wrap justify-between items-center gap-3">
+      <div className="flex flex-wrap justify-between items-center gap-4">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <Users className="w-5 h-5 text-ssp-primary" />
-            ข้อมูลผู้ใช้ทั้งหมด (User Management)
+          <h1 className="text-xl font-semibold text-ink-primary">
+            จัดการบัญชีผู้ใช้
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            จัดการบัญชีผู้ใช้งาน นักเรียน ครู และผู้ดูแลระบบ
+          <p className="text-sm text-ink-secondary mt-0.5">
+            จัดการบัญชีนักศึกษา ครู และผู้ดูแลระบบ
           </p>
         </div>
 
         <Link
           href="/admin/users/new"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-ssp-primary hover:bg-ssp-dark text-white text-xs font-semibold shadow-sm transition"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand hover:bg-brand-hover text-white text-sm font-medium transition-colors"
         >
-          <UserPlus className="w-4 h-4" /> เพิ่มบัญชีผู้ใช้
+          <Plus strokeWidth={1.5} className="w-4 h-4" />
+          เพิ่มบัญชีผู้ใช้
         </Link>
       </div>
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-3.5 shadow-sm">
-          <div className="w-11 h-11 rounded-xl bg-ssp-light text-ssp-primary flex items-center justify-center">
-            <Users className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-xs text-slate-500">บัญชีทั้งหมด</div>
-            <div className="text-xl font-bold text-slate-800">{totalUsers}</div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 bg-paper-surface border border-line rounded-xl divide-y lg:divide-y-0 lg:divide-x divide-line">
+        <div className="p-5">
+          <div className="text-xs text-ink-muted">บัญชีทั้งหมด</div>
+          <div className="text-2xl font-mono font-semibold tabular-nums text-ink-primary mt-1">
+            {totalUsers}
           </div>
         </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-3.5 shadow-sm">
-          <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-            <GraduationCap className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-xs text-slate-500">นักเรียน / นักศึกษา</div>
-            <div className="text-xl font-bold text-slate-800">
-              {studentCount}
-            </div>
+        <div className="p-5">
+          <div className="text-xs text-ink-muted">นักศึกษา</div>
+          <div className="text-2xl font-mono font-semibold tabular-nums text-brand mt-1">
+            {studentCount}
           </div>
         </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-3.5 shadow-sm">
-          <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-            <Briefcase className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-xs text-slate-500">ครู / อาจารย์</div>
-            <div className="text-xl font-bold text-slate-800">
-              {teacherCount}
-            </div>
+        <div className="p-5">
+          <div className="text-xs text-ink-muted">ครู / อาจารย์</div>
+          <div className="text-2xl font-mono font-semibold tabular-nums text-ink-primary mt-1">
+            {teacherCount}
           </div>
         </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-3.5 shadow-sm">
-          <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-            <ShieldCheck className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-xs text-slate-500">ผู้ดูแลระบบ</div>
-            <div className="text-xl font-bold text-slate-800">{adminCount}</div>
+        <div className="p-5">
+          <div className="text-xs text-ink-muted">ผู้ดูแลระบบ</div>
+          <div className="text-2xl font-mono font-semibold tabular-nums text-ink-primary mt-1">
+            {adminCount}
           </div>
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm">
-        <form
-          method="GET"
-          action="/admin/users"
-          className="grid grid-cols-1 md:grid-cols-12 gap-2"
-        >
-          <div className="md:col-span-10">
-            <input
-              type="text"
-              name="search_query"
-              defaultValue={searchQuery}
-              placeholder="ค้นหารหัสผู้ใช้, ชื่อผู้ใช้, หรือชื่อ-นามสกุล..."
-              className="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 focus:outline-none focus:border-ssp-primary"
-            />
-          </div>
-          <div className="md:col-span-2">
-            <button
-              type="submit"
-              className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-4 rounded-lg bg-ssp-primary hover:bg-ssp-dark text-white text-sm font-semibold transition"
-            >
-              <Search className="w-4 h-4" /> ค้นหา
-            </button>
-          </div>
-        </form>
-      </div>
+      <form
+        method="GET"
+        action="/admin/users"
+        className="bg-paper-surface rounded-xl border border-line p-3 grid grid-cols-1 md:grid-cols-12 gap-2"
+      >
+        <div className="md:col-span-10">
+          <input
+            type="text"
+            name="search_query"
+            defaultValue={searchQuery}
+            placeholder="ค้นหารหัสผู้ใช้, ชื่อผู้ใช้, หรือชื่อ-นามสกุล"
+            className="w-full text-sm bg-paper-bg border border-line-strong rounded-lg px-3.5 py-2 focus:outline-none focus:border-brand"
+          />
+        </div>
+        <div className="md:col-span-2">
+          <button
+            type="submit"
+            className="w-full py-2 px-4 rounded-lg bg-brand hover:bg-brand-hover text-white text-sm font-medium transition-colors"
+          >
+            ค้นหา
+          </button>
+        </div>
+      </form>
 
-      {/* Users Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+      <div className="bg-paper-surface rounded-xl border border-line overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 text-slate-600 text-xs uppercase border-b border-slate-200">
+            <thead className="bg-paper-muted/70 text-ink-secondary text-xs font-medium border-b border-line">
               <tr>
-                <th className="py-3.5 px-4">รหัสผู้ใช้</th>
-                <th className="py-3.5 px-4">ชื่อผู้ใช้</th>
-                <th className="py-3.5 px-4">ชื่อ</th>
-                <th className="py-3.5 px-4">นามสกุล</th>
-                <th className="py-3.5 px-4 text-center">สถานะ</th>
-                <th className="py-3.5 px-4 text-center">จัดการ</th>
+                <th className="py-3 px-4 font-mono">รหัสผู้ใช้</th>
+                <th className="py-3 px-4">ชื่อผู้ใช้</th>
+                <th className="py-3 px-4">ชื่อ</th>
+                <th className="py-3 px-4">นามสกุล</th>
+                <th className="py-3 px-4">สถานะ</th>
+                <th className="py-3 px-4 text-right">จัดการ</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-line">
               {users.map((row) => (
-                <tr key={row.userId} className="hover:bg-slate-50">
-                  <td className="py-3.5 px-4 font-semibold text-slate-800">
+                <tr key={row.userId} className="hover:bg-paper-bg transition-colors">
+                  <td className="py-3.5 px-4 font-mono text-xs text-ink-primary tabular-nums">
                     {row.userId}
                   </td>
-                  <td className="py-3.5 px-4 text-slate-600">{row.username}</td>
-                  <td className="py-3.5 px-4 text-slate-800">
-                    {row.userFname}
+                  <td className="py-3.5 px-4 text-ink-secondary">{row.username}</td>
+                  <td className="py-3.5 px-4 text-ink-primary">{row.userFname}</td>
+                  <td className="py-3.5 px-4 text-ink-primary">{row.userLname}</td>
+                  <td className="py-3.5 px-4 text-xs">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-paper-muted text-ink-secondary font-medium border border-line">
+                      <span
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{
+                          backgroundColor:
+                            row.role === "admin"
+                              ? "#136F73"
+                              : row.role === "teacher"
+                              ? "#D97706"
+                              : "#2563EB",
+                        }}
+                      />
+                      {row.role === "student"
+                        ? "นักศึกษา"
+                        : row.role === "admin"
+                        ? "ผู้ดูแลระบบ"
+                        : "ครู"}
+                    </span>
                   </td>
-                  <td className="py-3.5 px-4 text-slate-800">
-                    {row.userLname}
-                  </td>
-                  <td className="py-3.5 px-4 text-center">
-                    {row.role === "student" ? (
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                        นักเรียน นักศึกษา
-                      </span>
-                    ) : row.role === "admin" ? (
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        ผู้ดูแลระบบ
-                      </span>
-                    ) : (
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                        ครู
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-3.5 px-4 text-center">
+                  <td className="py-3.5 px-4 text-right">
                     <Link
                       href={`/admin/users/${encodeURIComponent(row.userId)}`}
-                      className="inline-flex items-center px-3 py-1 rounded-full bg-ssp-amber hover:bg-ssp-amberDark text-slate-900 text-xs font-semibold transition"
+                      className="text-brand hover:text-brand-hover font-medium text-xs"
                     >
-                      แก้ไขข้อมูล
+                      แก้ไข
                     </Link>
                   </td>
                 </tr>

@@ -1,53 +1,15 @@
 export interface WorkTypeMeta {
   key: string;
   label: string;
-  color: string;
-  bg: string;
-  badgeClass: string;
-  iconName: "code" | "palette" | "network" | "globe" | "headset" | "building";
+  dotColor: string;
 }
 
 export const WORK_TYPES: WorkTypeMeta[] = [
-  {
-    key: "เขียนโปรแกรม",
-    label: "เขียนโปรแกรม",
-    color: "#136F73",
-    bg: "rgba(19, 111, 115, 0.12)",
-    badgeClass: "bg-teal-50 text-teal-800 border-teal-200",
-    iconName: "code",
-  },
-  {
-    key: "ทำกราฟิก",
-    label: "ทำกราฟิก",
-    color: "#D97706",
-    bg: "rgba(245, 158, 11, 0.14)",
-    badgeClass: "bg-amber-50 text-amber-800 border-amber-200",
-    iconName: "palette",
-  },
-  {
-    key: "ระบบเครือข่าย",
-    label: "ระบบเครือข่าย",
-    color: "#2563EB",
-    bg: "rgba(37, 99, 235, 0.12)",
-    badgeClass: "bg-blue-50 text-blue-800 border-blue-200",
-    iconName: "network",
-  },
-  {
-    key: "ทำเว็บไซต์",
-    label: "ทำเว็บไซต์",
-    color: "#0891B2",
-    bg: "rgba(8, 145, 178, 0.12)",
-    badgeClass: "bg-cyan-50 text-cyan-800 border-cyan-200",
-    iconName: "globe",
-  },
-  {
-    key: "ด้านบริการ",
-    label: "ด้านบริการ",
-    color: "#7C3AED",
-    bg: "rgba(124, 58, 237, 0.12)",
-    badgeClass: "bg-purple-50 text-purple-800 border-purple-200",
-    iconName: "headset",
-  },
+  { key: "เขียนโปรแกรม", label: "เขียนโปรแกรม", dotColor: "#136F73" },
+  { key: "ทำกราฟิก", label: "ทำกราฟิก", dotColor: "#D97706" },
+  { key: "ระบบเครือข่าย", label: "ระบบเครือข่าย", dotColor: "#2563EB" },
+  { key: "ทำเว็บไซต์", label: "ทำเว็บไซต์", dotColor: "#0891B2" },
+  { key: "ด้านบริการ", label: "ด้านบริการ", dotColor: "#7C3AED" },
 ];
 
 export function getWorkTypeMeta(type?: string | null): WorkTypeMeta {
@@ -57,10 +19,7 @@ export function getWorkTypeMeta(type?: string | null): WorkTypeMeta {
   return {
     key: clean || "อื่นๆ",
     label: clean || "อื่นๆ",
-    color: "#475569",
-    bg: "rgba(71, 85, 105, 0.12)",
-    badgeClass: "bg-slate-100 text-slate-700 border-slate-200",
-    iconName: "building",
+    dotColor: "#71717A",
   };
 }
 
@@ -71,9 +30,9 @@ export function getRoleLabel(role?: string | null): string {
     case "teacher":
       return "ครู / อาจารย์";
     case "student":
-      return "นักเรียน / นักศึกษา";
+      return "นักศึกษา";
     default:
-      return "ผู้ใช้งานทั่วไป";
+      return "ผู้เยี่ยมชม";
   }
 }
 
@@ -86,3 +45,132 @@ export function normalizeImagePath(img?: string | null): string | null {
   if (clean.startsWith("img/")) return "/" + clean;
   return "/img/" + clean.replace(/^\/+/, "");
 }
+
+export type WorkModeValue = "onsite" | "remote" | "hybrid";
+
+export const WORK_MODES: { value: WorkModeValue; label: string; desc: string }[] = [
+  { value: "onsite", label: "Onsite", desc: "เข้าทำงานที่สถานประกอบการ" },
+  { value: "hybrid", label: "Hybrid", desc: "ผสมผสานเข้าออฟฟิศและทำงานทางไกล" },
+  { value: "remote", label: "Remote", desc: "ทำงานทางไกล 100%" },
+];
+
+export function getWorkModeLabel(mode?: string | null): string {
+  switch (mode) {
+    case "remote":
+      return "Remote";
+    case "hybrid":
+      return "Hybrid";
+    default:
+      return "Onsite";
+  }
+}
+
+/**
+ * Generates a 10-digit User ID:
+ * [2 digits BE year][2 digits University code][2 digits Faculty code][4 digits running number]
+ * e.g. academicYear="2569", uniCode="01", facultyCode="01" -> "6901010001"
+ */
+export function generateNextUserCode(
+  academicYear: string,
+  uniCode: string,
+  facultyCode: string,
+  existingUserIds: string[]
+): string {
+  const digits = academicYear.replace(/\D/g, "");
+  const yy = (digits.length >= 2 ? digits.slice(-2) : digits.padStart(2, "0"));
+  const uu = uniCode.replace(/\D/g, "").padStart(2, "0").slice(-2);
+  const ff = facultyCode.replace(/\D/g, "").padStart(2, "0").slice(-2);
+  const prefix = `${yy}${uu}${ff}`;
+
+  let maxRun = 0;
+  for (const id of existingUserIds) {
+    if (id.startsWith(prefix) && id.length === 10) {
+      const n = Number(id.slice(6));
+      if (Number.isInteger(n) && n > maxRun) {
+        maxRun = n;
+      }
+    }
+  }
+  const nextRun = String(maxRun + 1).padStart(4, "0");
+  return `${prefix}${nextRun}`;
+}
+
+export const THAI_PROVINCES: string[] = [
+  "กรุงเทพมหานคร",
+  "กระบี่",
+  "กาญจนบุรี",
+  "กาฬสินธุ์",
+  "กำแพงเพชร",
+  "ขอนแก่น",
+  "จันทบุรี",
+  "ฉะเชิงเทรา",
+  "ชลบุรี",
+  "ชัยนาท",
+  "ชัยภูมิ",
+  "ชุมพร",
+  "เชียงราย",
+  "เชียงใหม่",
+  "ตรัง",
+  "ตราด",
+  "ตาก",
+  "นครนายก",
+  "นครปฐม",
+  "นครพนม",
+  "นครราชสีมา",
+  "นครศรีธรรมราช",
+  "นครสวรรค์",
+  "นนทบุรี",
+  "นราธิวาส",
+  "น่าน",
+  "บึงกาฬ",
+  "บุรีรัมย์",
+  "ปทุมธานี",
+  "ประจวบคีรีขันธ์",
+  "ปราจีนบุรี",
+  "ปัตตานี",
+  "พระนครศรีอยุธยา",
+  "พะเยา",
+  "พังงา",
+  "พัทลุง",
+  "พิจิตร",
+  "พิษณุโลก",
+  "เพชรบุรี",
+  "เพชรบูรณ์",
+  "แพร่",
+  "ภูเก็ต",
+  "มหาสารคาม",
+  "มุกดาหาร",
+  "แม่ฮ่องสอน",
+  "ยโสธร",
+  "ยะลา",
+  "ร้อยเอ็ด",
+  "ระนอง",
+  "ระยอง",
+  "ราชบุรี",
+  "ลพบุรี",
+  "ลำปาง",
+  "ลำพูน",
+  "เลย",
+  "ศรีสะเกษ",
+  "สกลนคร",
+  "สงขลา",
+  "สตูล",
+  "สมุทรปราการ",
+  "สมุทรสงคราม",
+  "สมุทรสาคร",
+  "สระแก้ว",
+  "สระบุรี",
+  "สิงห์บุรี",
+  "สุโขทัย",
+  "สุพรรณบุรี",
+  "สุราษฎร์ธานี",
+  "สุรินทร์",
+  "หนองคาย",
+  "หนองบัวลำภู",
+  "อ่างทอง",
+  "อำนาจเจริญ",
+  "อุดรธานี",
+  "อุตรดิตถ์",
+  "อุทัยธานี",
+  "อุบลราชธานี",
+];

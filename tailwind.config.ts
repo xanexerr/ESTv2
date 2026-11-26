@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -9,18 +10,29 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ssp: {
-          primary: "#136F73",
-          dark: "#0D5255",
-          light: "#E6F3F3",
-          amber: "#FFB72B",
-          amberDark: "#E09B10",
-          cream: "#F7F8E0",
-          bg: "#F4F7F8",
+        brand: {
+          DEFAULT: "var(--brand)",
+          hover: "var(--brand-hover)",
+          subtle: "var(--brand-subtle)",
+        },
+        paper: {
+          bg: "var(--bg)",
+          surface: "var(--surface)",
+          muted: "var(--surface-muted)",
+        },
+        ink: {
+          primary: "var(--ink-primary)",
+          secondary: "var(--ink-secondary)",
+          muted: "var(--ink-muted)",
+        },
+        line: {
+          DEFAULT: "var(--line)",
+          strong: "var(--line-strong)",
         },
       },
       fontFamily: {
-        sans: ["'IBM Plex Sans Thai'", "'Inter'", "sans-serif"],
+        sans: ["'IBM Plex Sans Thai'", "system-ui", "sans-serif"],
+        mono: ["'IBM Plex Mono'", "ui-monospace", "SFMono-Regular", "monospace"],
       },
     },
   },

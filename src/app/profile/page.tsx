@@ -21,21 +21,21 @@ export default async function ProfilePage() {
     redirect("/login");
   }
 
-  const initial = (user.userFname || user.userId).charAt(0).toUpperCase();
-
   return (
     <div className="max-w-xl mx-auto my-4">
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-        <div className="bg-gradient-to-r from-ssp-dark to-ssp-primary text-white p-6 flex items-center gap-4">
-          <div className="w-13 h-13 rounded-full bg-ssp-amber text-slate-900 font-bold text-xl flex items-center justify-center" style={{ width: 52, height: 52 }}>
-            {initial}
-          </div>
+      <div className="bg-paper-surface rounded-2xl border border-line overflow-hidden">
+        <div className="p-6 border-b border-line flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-lg font-bold">แก้ไขข้อมูลส่วนตัว</h1>
-            <p className="text-xs text-white/80">
-              สถานะบัญชี : {getRoleLabel(user.role)}
+            <h1 className="text-lg font-semibold text-ink-primary">
+              แก้ไขข้อมูลส่วนตัว
+            </h1>
+            <p className="text-xs text-ink-secondary mt-0.5">
+              สถานะบัญชี: {getRoleLabel(user.role)}
             </p>
           </div>
+          <span className="font-mono text-xs text-ink-muted tabular-nums">
+            {user.userId}
+          </span>
         </div>
 
         <ProfileFormClient user={user} />

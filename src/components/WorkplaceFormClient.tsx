@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { WORK_TYPES } from "@/lib/constants";
+import { WORK_TYPES, WORK_MODES, THAI_PROVINCES, WorkModeValue } from "@/lib/constants";
 import {
   createWorkplaceAction,
   updateWorkplaceAction,
@@ -12,17 +12,7 @@ import {
   submitCommentAction,
   updateCommentAction,
 } from "@/app/actions";
-import {
-  Save,
-  Trash2,
-  Eye,
-  EyeOff,
-  Star,
-  Send,
-  AlertCircle,
-  CheckCircle2,
-  PenSquare,
-} from "lucide-react";
+import { Star, AlertCircle, Check } from "lucide-react";
 
 export function WorkplaceFormClient({
   mode,
@@ -37,6 +27,8 @@ export function WorkplaceFormClient({
     workplaceId: number;
     workplaceName: string;
     workType: string;
+    workMode?: WorkModeValue;
+    province?: string | null;
     workTel: string | null;
     description: string | null;
     workplaceAddress: string;
@@ -51,6 +43,13 @@ export function WorkplaceFormClient({
   const router = useRouter();
   const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [workMode, setWorkMode] = useState<WorkModeValue>(
+    initialData?.workMode || "onsite"
+  );
+  const [province, setProvince] = useState<string>(
+    initialData?.province || "สงขลา"
+  );
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -82,10 +81,10 @@ export function WorkplaceFormClient({
 
   async function handleDelete() {
     if (!initialData) return;
-    if (!confirm("คุณแน่ใจหรือไม่ที่จะลบสถานประกอบการนี้?")) return;
     setLoading(true);
     const res = await deleteWorkplaceAction(initialData.workplaceId);
     setLoading(false);
+    setConfirmingDelete(false);
     if (res.ok && res.redirectTo) {
       router.push(res.redirectTo);
       router.refresh();
@@ -98,63 +97,43 @@ export function WorkplaceFormClient({
     <form onSubmit={handleSubmit} className="p-6 space-y-4">
       {status && (
         <div
-          className={`p-3.5 rounded-xl border text-xs font-medium flex items-center gap-2 ${
+          className={`p-3 rounded-lg border text-xs font-medium flex items-center gap-2 ${
             status.ok
               ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-              : "bg-red-50 border-red-200 text-red-700"
+              : "bg-red-50 border-red-200 text-red-800"
           }`}
         >
           {status.ok ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            <Check strokeWidth={1.5} className="w-4 h-4 flex-shrink-0" />
           ) : (
-            <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+            <AlertCircle strokeWidth={1.5} className="w-4 h-4 flex-shrink-0" />
           )}
           {status.msg}
         </div>
       )}
 
       {canToggleShow && initialData && (
-        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-wrap justify-between items-center gap-3">
+        <div className="p-4 rounded-xl bg-paper-bg border border-line flex flex-wrap justify-between items-center gap-3">
           <div>
-            <div className="text-xs font-semibold text-slate-500">
-              สถานะการแสดงผลปัจจุบัน
+            <div className="text-xs text-ink-muted">สถานะการแสดงผลปัจจุบัน</div>
+            <div className="text-sm font-medium text-ink-primary mt-0.5">
+              {initialData.show ? "กำลังแสดงผลบนเว็บไซต์" : "ซ่อน / ไม่แสดงผล"}
             </div>
-            {initialData.show ? (
-              <span className="inline-flex items-center gap-1 mt-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-                <Eye className="w-3.5 h-3.5" /> กำลังแสดงผลบนเว็บไซต์
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 mt-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">
-                <EyeOff className="w-3.5 h-3.5" /> ซ่อน / ไม่แสดงผล
-              </span>
-            )}
           </div>
           <button
             type="button"
             onClick={handleToggleShow}
             disabled={loading}
-            className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold text-white transition ${
-              initialData.show
-                ? "bg-red-600 hover:bg-red-700"
-                : "bg-emerald-600 hover:bg-emerald-700"
-            }`}
+            className="px-3.5 py-1.5 rounded-lg border border-line-strong bg-paper-surface hover:bg-paper-muted text-xs font-medium text-ink-primary transition-colors"
           >
-            {initialData.show ? (
-              <>
-                <EyeOff className="w-3.5 h-3.5" /> คลิกเพื่อซ่อนสถานประกอบการ
-              </>
-            ) : (
-              <>
-                <Eye className="w-3.5 h-3.5" /> คลิกเพื่อเปิดแสดงผล
-              </>
-            )}
+            {initialData.show ? "เปลี่ยนเป็นซ่อน" : "เปลี่ยนเป็นแสดงผล"}
           </button>
         </div>
       )}
 
       {mode === "edit" && initialData && (
         <div>
-          <label className="block text-xs font-semibold text-slate-600 mb-1">
+          <label className="block text-xs font-medium text-ink-secondary mb-1">
             รหัสสถานประกอบการ
           </label>
           <input
@@ -162,13 +141,13 @@ export function WorkplaceFormClient({
             name="workplace_id"
             value={initialData.workplaceId}
             readOnly
-            className="w-full px-3.5 py-2 text-sm rounded-xl bg-slate-100 border border-slate-200 text-red-600 font-semibold"
+            className="w-full px-3.5 py-2 text-sm rounded-lg bg-paper-muted border border-line text-ink-muted font-mono tabular-nums"
           />
         </div>
       )}
 
       <div>
-        <label className="block text-xs font-semibold text-slate-700 mb-1">
+        <label className="block text-xs font-medium text-ink-secondary mb-1">
           ชื่อบริษัท / สถานประกอบการ
         </label>
         <input
@@ -177,19 +156,19 @@ export function WorkplaceFormClient({
           defaultValue={initialData?.workplaceName || ""}
           required
           placeholder="ระบุชื่อบริษัทหรือหน่วยงาน"
-          className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-ssp-primary"
+          className="w-full px-3.5 py-2 text-sm rounded-lg bg-paper-bg border border-line-strong text-ink-primary focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
         />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">
+          <label className="block text-xs font-medium text-ink-secondary mb-1">
             ประเภทงาน
           </label>
           <select
             name="work_type"
             defaultValue={initialData?.workType || "เขียนโปรแกรม"}
-            className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 bg-white focus:outline-none focus:border-ssp-primary"
+            className="w-full px-3.5 py-2 text-sm rounded-lg bg-paper-bg border border-line-strong text-ink-primary focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
           >
             {WORK_TYPES.map((t) => (
               <option key={t.key} value={t.key}>
@@ -200,7 +179,7 @@ export function WorkplaceFormClient({
           </select>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">
+          <label className="block text-xs font-medium text-ink-secondary mb-1">
             เบอร์โทรติดต่อ
           </label>
           <input
@@ -208,14 +187,67 @@ export function WorkplaceFormClient({
             name="work_tel"
             defaultValue={initialData?.workTel || ""}
             required
-            placeholder="เช่น 074123456 หรือ 0812345678"
-            className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-ssp-primary"
+            placeholder="074123456"
+            className="w-full px-3.5 py-2 text-sm rounded-lg bg-paper-bg border border-line-strong text-ink-primary font-mono tabular-nums focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
           />
         </div>
       </div>
 
+      {/* Work Mode (Onsite / Hybrid / Remote) + Conditional Province */}
+      <div className="space-y-3 p-4 rounded-xl bg-paper-bg border border-line">
+        <div>
+          <span className="block text-xs font-medium text-ink-secondary mb-2">
+            รูปแบบสถานที่ทำงาน <span className="text-red-500">*</span>
+          </span>
+          <input type="hidden" name="work_mode" value={workMode} />
+          <div className="grid grid-cols-3 gap-2">
+            {WORK_MODES.map((m) => (
+              <button
+                key={m.value}
+                type="button"
+                onClick={() => setWorkMode(m.value)}
+                aria-pressed={workMode === m.value}
+                className={`min-h-[44px] px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                  workMode === m.value
+                    ? "bg-brand text-white dark:text-zinc-950 border-brand"
+                    : "bg-paper-surface text-ink-secondary border-line-strong hover:text-ink-primary"
+                }`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {(workMode === "onsite" || workMode === "hybrid") && (
+          <div>
+            <label
+              htmlFor="wp_province"
+              className="block text-xs font-medium text-ink-secondary mb-1"
+            >
+              จังหวัดที่ตั้งสถานประกอบการ <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="wp_province"
+              name="province"
+              required
+              value={province}
+              onChange={(e) => setProvince(e.target.value)}
+              className="w-full min-h-[44px] sm:min-h-0 sm:h-10 px-3.5 py-2 text-sm rounded-lg bg-paper-surface border border-line-strong text-ink-primary focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+            >
+              <option value="">-- เลือกจังหวัด --</option>
+              {THAI_PROVINCES.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
+
       <div>
-        <label className="block text-xs font-semibold text-slate-700 mb-1">
+        <label className="block text-xs font-medium text-ink-secondary mb-1">
           ลักษณะงาน
         </label>
         <input
@@ -224,12 +256,12 @@ export function WorkplaceFormClient({
           defaultValue={initialData?.description || ""}
           required
           placeholder="อธิบายลักษณะงานที่ปฏิบัติโดยสังเขป"
-          className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-ssp-primary"
+          className="w-full px-3.5 py-2 text-sm rounded-lg bg-paper-bg border border-line-strong text-ink-primary focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
         />
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-slate-700 mb-1">
+        <label className="block text-xs font-medium text-ink-secondary mb-1">
           ที่อยู่สถานประกอบการ
         </label>
         <textarea
@@ -238,20 +270,20 @@ export function WorkplaceFormClient({
           defaultValue={initialData?.workplaceAddress || ""}
           required
           placeholder="ระบุบ้านเลขที่ ถนน ตำบล อำเภอ จังหวัด"
-          className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-ssp-primary"
+          className="w-full px-3.5 py-2 text-sm rounded-lg bg-paper-bg border border-line-strong text-ink-primary focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
         />
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-slate-700 mb-1">
+        <label className="block text-xs font-medium text-ink-secondary mb-1">
           ลิงก์แผนที่ (Google Maps URL)
         </label>
         <input
           type="text"
           name="map"
           defaultValue={initialData?.map || ""}
-          placeholder="https://maps.google.com/..."
-          className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-ssp-primary"
+          placeholder="https://maps.google.com"
+          className="w-full px-3.5 py-2 text-sm rounded-lg bg-paper-bg border border-line-strong text-ink-primary focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
         />
       </div>
 
@@ -259,9 +291,8 @@ export function WorkplaceFormClient({
         <button
           type="submit"
           disabled={loading}
-          className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-ssp-primary hover:bg-ssp-dark disabled:opacity-60 text-white font-semibold text-sm transition"
+          className="w-full py-2.5 px-4 rounded-lg bg-brand hover:bg-brand-hover disabled:opacity-60 text-white font-medium text-sm transition-colors"
         >
-          <Save className="w-4 h-4" />
           {loading
             ? "กำลังบันทึก..."
             : mode === "create"
@@ -271,23 +302,46 @@ export function WorkplaceFormClient({
 
         {extraFooter}
 
-        {canDelete && initialData && (
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={loading}
-            className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 font-semibold text-sm transition"
-          >
-            <Trash2 className="w-4 h-4" /> ลบสถานประกอบการ
-          </button>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {canDelete && initialData && !confirmingDelete && (
+            <button
+              type="button"
+              onClick={() => setConfirmingDelete(true)}
+              disabled={loading}
+              className="flex-1 min-h-[44px] sm:min-h-0 sm:h-10 px-4 rounded-lg border border-red-200 text-red-700 hover:bg-red-50 font-medium text-sm transition-colors"
+            >
+              ลบสถานประกอบการ
+            </button>
+          )}
 
-        <Link
-          href={cancelHref}
-          className="w-full inline-flex items-center justify-center py-2.5 px-4 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium transition"
-        >
-          ยกเลิก
-        </Link>
+          {canDelete && initialData && confirmingDelete && (
+            <div className="flex-1 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={loading}
+                className="flex-1 min-h-[44px] sm:min-h-0 sm:h-10 px-3 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-sm transition-colors"
+              >
+                {loading ? "กำลังลบ..." : "ยืนยันการลบ"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(false)}
+                disabled={loading}
+                className="min-h-[44px] sm:min-h-0 sm:h-10 px-3 rounded-lg border border-line-strong text-ink-secondary text-sm font-medium"
+              >
+                ไม่ลบ
+              </button>
+            </div>
+          )}
+
+          <Link
+            href={cancelHref}
+            className="flex-1 min-h-[44px] sm:min-h-0 sm:h-10 inline-flex items-center justify-center px-4 rounded-lg border border-line-strong text-ink-secondary hover:text-ink-primary text-sm font-medium transition-colors"
+          >
+            ยกเลิก
+          </Link>
+        </div>
       </div>
     </form>
   );
@@ -338,49 +392,50 @@ export function ReviewFormClient({
 
       {status && (
         <div
-          className={`p-3.5 rounded-xl border text-xs font-medium flex items-center gap-2 ${
+          className={`p-3 rounded-lg border text-xs font-medium flex items-center gap-2 ${
             status.ok
               ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-              : "bg-red-50 border-red-200 text-red-700"
+              : "bg-red-50 border-red-200 text-red-800"
           }`}
         >
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <AlertCircle strokeWidth={1.5} className="w-4 h-4 flex-shrink-0" />
           {status.msg}
         </div>
       )}
 
       <div>
-        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-          ให้คะแนนสถานประกอบการ (1 - 5 ดาว)
+        <label className="block text-xs font-medium text-ink-secondary mb-1.5">
+          ให้คะแนนสถานประกอบการ (1–5 ดาว)
         </label>
-        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+        <div className="p-3.5 rounded-xl bg-paper-bg border border-line flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             {[1, 2, 3, 4, 5].map((star) => (
               <button
                 key={star}
                 type="button"
                 onClick={() => setRate(star)}
-                className="focus:outline-none transition transform hover:scale-110"
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 rounded"
               >
                 <Star
-                  className={`w-8 h-8 ${
+                  strokeWidth={1.5}
+                  className={`w-6 h-6 transition-colors ${
                     star <= rate
-                      ? "text-amber-400 fill-amber-400"
-                      : "text-slate-300 fill-slate-100"
+                      ? "text-amber-500 fill-amber-500"
+                      : "text-zinc-300 fill-transparent"
                   }`}
                 />
               </button>
             ))}
           </div>
-          <span className="px-3 py-1 rounded-full bg-ssp-amber text-slate-900 font-bold text-xs">
-            {rate} ดาว
+          <span className="font-mono text-xs font-medium text-ink-primary tabular-nums">
+            {rate}.0 / 5.0
           </span>
         </div>
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-slate-700 mb-1">
-          ความคิดเห็น / รีวิวการฝึกงาน :
+        <label className="block text-xs font-medium text-ink-secondary mb-1">
+          ความคิดเห็น
         </label>
         <textarea
           name="comment"
@@ -389,25 +444,25 @@ export function ReviewFormClient({
           defaultValue={initialComment}
           required
           placeholder="เล่าบรรยากาศการทำงาน พี่เลี้ยง หรือสิ่งที่ได้เรียนรู้ (สูงสุด 250 ตัวอักษร)"
-          className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-ssp-primary"
+          className="w-full px-3.5 py-2 text-sm rounded-lg bg-paper-bg border border-line-strong text-ink-primary focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
         />
       </div>
 
       {existingImgUrl && !preview && (
         <div>
-          <label className="block text-xs font-semibold text-slate-600 mb-1">
-            รูปภาพปัจจุบัน :
+          <label className="block text-xs font-medium text-ink-secondary mb-1">
+            รูปภาพปัจจุบัน
           </label>
           <img
             src={existingImgUrl}
-            alt="Current review"
-            className="h-32 rounded-xl border border-slate-200 object-cover"
+            alt="ภาพรีวิวปัจจุบัน"
+            className="h-32 rounded-lg border border-line object-cover"
           />
         </div>
       )}
 
       <div>
-        <label className="block text-xs font-semibold text-slate-700 mb-1">
+        <label className="block text-xs font-medium text-ink-secondary mb-1">
           {mode === "create"
             ? "เพิ่มรูปภาพบรรยากาศฝึกงาน (ไม่บังคับ)"
             : "เปลี่ยนรูปภาพใหม่ (เว้นว่างไว้หากไม่ต้องการเปลี่ยน)"}
@@ -424,37 +479,33 @@ export function ReviewFormClient({
               setPreview(null);
             }
           }}
-          className="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-ssp-light file:text-ssp-primary hover:file:bg-ssp-primary/20"
+          className="w-full text-xs text-ink-secondary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-line-strong file:text-xs file:font-medium file:bg-paper-muted file:text-ink-primary hover:file:bg-zinc-200"
         />
         {preview && (
           <img
             src={preview}
-            alt="Preview"
-            className="mt-3 max-h-48 rounded-xl border border-slate-200 object-cover"
+            alt="ตัวอย่างรูปภาพ"
+            className="mt-3 max-h-48 rounded-lg border border-line object-cover"
           />
         )}
       </div>
 
-      <div className="pt-2 space-y-2">
+      <div className="pt-2 flex items-center gap-3">
         <button
           type="submit"
           disabled={loading}
-          className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-ssp-primary hover:bg-ssp-dark disabled:opacity-60 text-white font-semibold text-sm transition"
+          className="flex-1 py-2.5 px-4 rounded-lg bg-brand hover:bg-brand-hover disabled:opacity-60 text-white font-medium text-sm transition-colors"
         >
-          {mode === "create" ? (
-            <>
-              <Send className="w-4 h-4" /> ยืนยันการส่งความคิดเห็น
-            </>
-          ) : (
-            <>
-              <PenSquare className="w-4 h-4" /> บันทึกการแก้ไขความคิดเห็น
-            </>
-          )}
+          {loading
+            ? "กำลังบันทึก..."
+            : mode === "create"
+            ? "ส่งความคิดเห็น"
+            : "บันทึกการแก้ไข"}
         </button>
 
         <Link
           href="/student/workplace"
-          className="w-full inline-flex items-center justify-center py-2.5 px-4 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium transition"
+          className="py-2.5 px-4 rounded-lg border border-line-strong text-ink-secondary hover:text-ink-primary text-sm font-medium transition-colors"
         >
           ยกเลิก
         </Link>
