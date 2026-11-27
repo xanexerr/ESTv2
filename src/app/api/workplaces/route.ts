@@ -1,15 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { WorkMode } from "@prisma/client";
+import {
+  getCurrentUserContext,
+  buildUniversityWorkplaceWhere,
+} from "@/lib/university-scope";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  const currentUser = await getCurrentUserContext();
+  if (!currentUser) {
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(req.url);
   const workModeRaw = searchParams.get("workMode");
   const province = searchParams.get("province");
 
-  const where: any = { show: true };
+  const scopeWhere = buildUniversityWorkplaceWhere(
+    currentUser.universityId,
+    currentUser.role
+  );
+
+  const andClauses: any[] = [scopeWhere];
 
   if (workModeRaw) {
     if (
@@ -22,15 +36,15 @@ export async function GET(req: NextRequest) {
         { status: 400 }
       );
     }
-    where.workMode = workModeRaw;
+    andClauses.push({ workMode: workModeRaw });
   }
 
   if (province) {
-    where.province = province;
+    andClauses.push({ province });
   }
 
   const workplaces = await prisma.workplace.findMany({
-    where,
+    where: { AND: andClauses },
     orderBy: { workplaceId: "asc" },
     select: {
       workplaceId: true,

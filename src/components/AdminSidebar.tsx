@@ -30,7 +30,7 @@ export function AdminSidebar({
 
   async function handleLogout() {
     await logoutAction();
-    router.push("/");
+    router.push("/login");
     router.refresh();
   }
 
@@ -66,13 +66,13 @@ export function AdminSidebar({
   const SidebarContent = (
     <div className="flex flex-col h-full">
       {/* Brand Header */}
-      <div className="h-14 px-4 border-b border-line flex items-center justify-between">
-        <Link href="/admin/approvals" className="flex items-center gap-2">
-          <span className="w-7 h-7 rounded-md bg-brand text-white dark:text-zinc-950 font-mono font-semibold text-xs inline-flex items-center justify-center">
-            EST
+      <div className="h-16 px-4 border-b border-line flex items-center justify-between">
+        <Link href="/admin/approvals" className="flex items-center gap-2.5">
+          <span className="px-2.5 h-8 rounded-lg bg-brand text-white dark:text-zinc-950 font-mono font-bold text-xs tracking-wider inline-flex items-center justify-center">
+            UNINFO
           </span>
           <span className="text-sm font-semibold text-ink-primary">
-            EST Admin
+            Admin
           </span>
         </Link>
         <button
@@ -116,11 +116,11 @@ export function AdminSidebar({
 
         <div className="pt-3 mt-3 border-t border-line">
           <Link
-            href="/"
+            href="/my-career"
             className="flex items-center gap-2.5 px-3 py-2 min-h-[40px] rounded-lg text-sm font-medium text-ink-secondary hover:text-ink-primary hover:bg-paper-muted transition-colors"
           >
             <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
-            กลับหน้าแพลตฟอร์ม
+            กลับหน้า My Career
           </Link>
         </div>
       </nav>
@@ -160,7 +160,7 @@ export function AdminSidebar({
             <Menu className="w-5 h-5" strokeWidth={1.5} />
           </button>
           <span className="text-sm font-semibold text-ink-primary">
-            EST Admin
+            UNINFO Admin
           </span>
         </div>
         <ThemeToggle compact />

@@ -1,8 +1,11 @@
 import React from "react";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { getSessionUser } from "@/lib/auth";
-import { normalizeImagePath } from "@/lib/constants";
+import {
+  getCurrentUserContext,
+  buildUniversityWorkplaceWhere,
+} from "@/lib/university-scope";
+import { normalizeImagePath, getWorkModeLabel } from "@/lib/constants";
 import { WorkTypeBadge, StarRating } from "@/components/WorkTypeIcon";
 import {
   SelectWorkplaceButton,
@@ -20,58 +23,71 @@ export default async function WorkplaceDetailPage({
   const { id } = await params;
   const workplaceId = Number(id);
 
-  const [session, workplace] = await Promise.all([
-    getSessionUser(),
-    prisma.workplace.findUnique({
-      where: { workplaceId },
-      include: {
-        _count: {
-          select: { selectedByUsers: true },
+  const currentUser = await getCurrentUserContext();
+  if (!currentUser) {
+    return null;
+  }
+
+  const scopeWhere = buildUniversityWorkplaceWhere(
+    currentUser.universityId,
+    currentUser.role
+  );
+
+  const workplace = await prisma.workplace.findFirst({
+    where: {
+      AND: [{ workplaceId }, scopeWhere],
+    },
+    include: {
+      _count: {
+        select: {
+          selectedByUsers:
+            currentUser.role !== "admin" && currentUser.universityId
+              ? { where: { universityId: currentUser.universityId } }
+              : true,
         },
-        comments: {
-          where: { show: true },
-          orderBy: { commentTime: "desc" },
-          include: {
-            user: {
-              select: {
-                userFname: true,
-                userLname: true,
-                role: true,
-              },
+      },
+      comments: {
+        where: {
+          show: true,
+          ...(currentUser.role !== "admin" && currentUser.universityId
+            ? { user: { universityId: currentUser.universityId } }
+            : {}),
+        },
+        orderBy: { commentTime: "desc" },
+        include: {
+          user: {
+            select: {
+              userFname: true,
+              userLname: true,
+              role: true,
             },
           },
         },
       },
-    }),
-  ]);
+    },
+  });
 
   if (!workplace) {
     return (
       <div className="bg-paper-surface rounded-xl border border-line p-12 text-center">
         <h1 className="text-lg font-semibold text-ink-primary mb-2">
-          ไม่พบข้อมูลสถานประกอบการ
+          ไม่พบข้อมูลสถานประกอบการในมหาวิทยาลัยของคุณ
         </h1>
         <p className="text-sm text-ink-secondary mb-4">
-          สถานประกอบการนี้อาจถูกลบหรือไม่มีอยู่ในระบบ
+          สถานประกอบการนี้อาจถูกลบ หรือยังไม่มีนักศึกษาจากมหาวิทยาลัยของคุณเข้าฝึกงานและเพิ่มข้อมูลไว้
         </p>
         <Link
-          href="/"
+          href="/career-reviews"
           className="inline-flex items-center px-4 py-2 rounded-lg bg-brand text-white dark:text-zinc-950 text-sm font-medium"
         >
-          กลับหน้าแรก
+          กลับหน้า Career Reviews
         </Link>
       </div>
     );
   }
 
-  let currentUserWorkplaceId: number | null = null;
-  if (session) {
-    const u = await prisma.user.findUnique({
-      where: { userId: session.userId },
-      select: { workplaceId: true },
-    });
-    currentUserWorkplaceId = u?.workplaceId ?? null;
-  }
+  const currentUserWorkplaceId = currentUser.workplaceId ?? null;
+  const session = currentUser;
 
   const mapUrl = workplace.map
     ? workplace.map.startsWith("http")
@@ -87,11 +103,11 @@ export default async function WorkplaceDetailPage({
     <div className="space-y-6">
       <div>
         <Link
-          href="/"
+          href="/career-reviews"
           className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-secondary hover:text-ink-primary transition-colors"
         >
           <ArrowLeft strokeWidth={1.5} className="w-4 h-4" />
-          กลับหน้ารายชื่อสถานประกอบการ
+          กลับหน้า Career Reviews
         </Link>
       </div>
 
@@ -106,14 +122,14 @@ export default async function WorkplaceDetailPage({
                   #{String(workplace.workplaceId).padStart(3, "0")}
                 </span>
                 <Link
-                  href={`/?work_type_filter=${encodeURIComponent(
+                  href={`/career-reviews?work_type_filter=${encodeURIComponent(
                     workplace.workType
                   )}`}
                 >
                   <WorkTypeBadge type={workplace.workType} />
                 </Link>
-                <span className="text-xs font-mono tabular-nums text-ink-muted">
-                  นักศึกษาเลือกแล้ว {workplace._count.selectedByUsers} คน
+                <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-paper-muted text-ink-secondary border border-line">
+                  {getWorkModeLabel(workplace.workMode)}
                 </span>
               </div>
 
@@ -276,10 +292,14 @@ export default async function WorkplaceDetailPage({
 
         {/* Right Column: Rating Summary & Photo Gallery */}
         <div className="lg:col-span-4 space-y-6">
-          <div className="bg-paper-surface rounded-2xl border border-line p-6">
-            <h2 className="text-xs font-medium text-ink-muted mb-2">
-              คะแนนรีวิวเฉลี่ย
-            </h2>
+          <div className="bg-paper-surface rounded-2xl border border-line p-6 space-y-3">
+            <div className="pb-3 border-b border-line text-xs font-mono tabular-nums text-ink-secondary">
+              นักศึกษาเลือกแล้ว {workplace._count.selectedByUsers} คน
+            </div>
+            <div>
+              <h2 className="text-xs font-medium text-ink-muted mb-2">
+                คะแนนรีวิวเฉลี่ย
+              </h2>
             {workplace.rating > 0 ? (
               <div className="space-y-2">
                 <div className="flex items-baseline gap-2">
@@ -302,6 +322,7 @@ export default async function WorkplaceDetailPage({
                 ยังไม่มีคะแนนรีวิว
               </div>
             )}
+            </div>
           </div>
 
           <div className="bg-paper-surface rounded-2xl border border-line p-6 space-y-3">

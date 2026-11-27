@@ -204,6 +204,8 @@ export async function submitCourseReviewAction(
   const commentText = String(formData.get("comment_text") || "").trim();
   const academicYear = String(formData.get("academic_year") || "2569").trim();
   const semester = String(formData.get("semester") || "1").trim();
+  const showName = formData.get("show_name") !== "false";
+  const showGrade = formData.get("show_grade") !== "false";
 
   if (
     !courseId ||
@@ -282,6 +284,8 @@ export async function submitCourseReviewAction(
       commentText,
       academicYear,
       semester,
+      showName,
+      showGrade,
     },
     create: {
       courseId,
@@ -292,11 +296,49 @@ export async function submitCourseReviewAction(
       commentText,
       academicYear,
       semester,
+      showName,
+      showGrade,
     },
   });
 
   revalidatePath("/courses");
   return { ok: true, message: "บันทึกรีวิวรายวิชาเรียบร้อยแล้ว" };
+}
+
+export async function toggleCourseReviewPrivacyAction(
+  reviewId: number,
+  field: "showName" | "showGrade"
+): Promise<ActionResult> {
+  const session = await getSessionUser();
+  if (!session) {
+    return { ok: false, message: "กรุณาเข้าสู่ระบบ" };
+  }
+
+  const review = await prisma.courseReview.findUnique({
+    where: { reviewId },
+  });
+  if (!review || review.userId !== session.userId) {
+    return { ok: false, message: "ไม่พบรีวิวของคุณ" };
+  }
+
+  const nextVal = field === "showName" ? !review.showName : !review.showGrade;
+  await prisma.courseReview.update({
+    where: { reviewId },
+    data: field === "showName" ? { showName: nextVal } : { showGrade: nextVal },
+  });
+
+  revalidatePath("/courses");
+  return {
+    ok: true,
+    message:
+      field === "showName"
+        ? nextVal
+          ? "เปิดแสดงชื่อผู้รีวิวแล้ว"
+          : "ซ่อนชื่อผู้รีวิวแล้ว"
+        : nextVal
+          ? "เปิดแสดงเกรดในรีวิวแล้ว"
+          : "ซ่อนเกรดในรีวิวแล้ว",
+  };
 }
 
 export async function createCourseAction(

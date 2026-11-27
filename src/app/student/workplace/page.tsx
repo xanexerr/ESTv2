@@ -54,7 +54,7 @@ export default async function StudentWorkplacePage() {
           <WorkplaceFormClient
             mode="edit"
             initialData={createdWp}
-            cancelHref="/"
+            cancelHref="/my-career"
             extraFooter={
               <Link
                 href={hasComment ? "/student/review/edit" : "/student/review"}
@@ -130,10 +130,10 @@ export default async function StudentWorkplacePage() {
                   : "เพิ่มความคิดเห็นและให้คะแนนรีวิว"}
               </Link>
               <Link
-                href="/"
+                href="/my-career"
                 className="py-2.5 px-4 rounded-lg border border-line-strong text-ink-secondary hover:text-ink-primary text-sm font-medium transition-colors"
               >
-                กลับหน้าแรก
+                กลับหน้า My Career
               </Link>
             </div>
           </div>
@@ -154,7 +154,7 @@ export default async function StudentWorkplacePage() {
               เพิ่มสถานประกอบการใหม่
             </Link>
             <Link
-              href="/"
+              href="/internships"
               className="w-full inline-flex items-center justify-center py-2.5 px-4 rounded-lg border border-line-strong text-ink-secondary hover:text-ink-primary font-medium text-sm transition-colors"
             >
               เลือกสถานประกอบการที่มีในระบบ

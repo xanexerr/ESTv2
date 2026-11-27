@@ -126,6 +126,8 @@ model CourseReview {
   commentText           String   @map("comment_text")
   academicYear          String   @default("2569") @map("academic_year")
   semester              String   @default("1")
+  showName              Boolean  @default(true) @map("show_name")
+  showGrade             Boolean  @default(true) @map("show_grade")
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
 
@@ -151,6 +153,7 @@ model Workplace {
   map              String?
   createdAt        DateTime          @default(now()) @map("created_at")
 
+  createdBy        User?             @relation("CreatedWorkplaces", fields: [userId], references: [userId], onDelete: SetNull)
   selectedByUsers  User[]            @relation("SelectedWorkplace")
   comments         Comment[]
   internshipRounds InternshipRound[]
@@ -179,7 +182,8 @@ model User {
   university         University?       @relation(fields: [universityId], references: [universityId], onDelete: SetNull)
   faculty            Faculty?          @relation(fields: [facultyId], references: [facultyId], onDelete: SetNull)
   major              Major?            @relation(fields: [majorId], references: [majorId], onDelete: SetNull)
-  workplace          Workplace?        @relation("SelectedWorkplace", fields: [workplaceId], references: [workplaceId], onDelete: SetNull)
+  workplace          Workplace?            @relation("SelectedWorkplace", fields: [workplaceId], references: [workplaceId], onDelete: SetNull)
+  createdWorkplaces  Workplace[]           @relation("CreatedWorkplaces")
   comments           Comment[]
   courseReviews      CourseReview[]
   passedCourses      StudentPassedCourse[]

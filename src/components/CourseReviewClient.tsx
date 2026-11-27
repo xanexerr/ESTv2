@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useTransition } from "react";
+import React, { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -15,18 +15,24 @@ import {
   Lock,
   GraduationCap,
   X,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   submitCourseReviewAction,
   createCourseAction,
   recordPassedCourseAction,
   removePassedCourseAction,
+  toggleCourseReviewPrivacyAction,
 } from "@/app/course-actions";
 
 export interface CourseReviewData {
   reviewId: number;
-  userId: string;
+  isMine: boolean;
   reviewerName: string;
+  reviewerGrade: string | null;
+  showName: boolean;
+  showGrade: boolean;
   contentRating: number;
   workloadRating: number;
   gradeDifficultyRating: number;
@@ -120,7 +126,7 @@ function MetricBar({
           style={{ width: `${pct}%` }}
         />
       </div>
-      <div className="text-[11px] text-ink-muted">{hint}</div>
+      <div className="text-[12px] text-ink-muted">{hint}</div>
     </div>
   );
 }
@@ -175,7 +181,6 @@ export function CourseReviewClient({
 
   const isStudent = currentUser?.role === "student";
 
-  // Resolve initial selection: default to student's own university/faculty/major if available
   const initialUni =
     (isStudent && currentUser?.universityId
       ? universities.find((u) => u.universityId === currentUser.universityId)
@@ -197,7 +202,6 @@ export function CourseReviewClient({
     initialFac?.majors[0] ||
     null;
 
-  // 5-Level Cascading State: University -> Faculty -> Major -> Year -> Course
   const [uniId, setUniId] = useState<string>(
     initialUni ? String(initialUni.universityId) : ""
   );
@@ -244,7 +248,6 @@ export function CourseReviewClient({
     [filteredCourses, courseId]
   );
 
-  // Map of passed courses for quick lookup
   const passedCourseMap = useMemo(() => {
     const map = new Map<number, PassedCourseRecord>();
     for (const rec of currentUser?.passedCourses || []) {
@@ -269,10 +272,9 @@ export function CourseReviewClient({
     ? passedCourseMap.get(selectedCourse.courseId) || null
     : null;
 
-  const hasExistingUserReview = Boolean(
-    selectedCourse &&
-      currentUser &&
-      selectedCourse.reviews.some((r) => r.userId === currentUser.userId)
+  const myExistingReview = useMemo(
+    () => selectedCourse?.reviews.find((r) => r.isMine) || null,
+    [selectedCourse]
   );
 
   // Passed-course form state
@@ -287,12 +289,34 @@ export function CourseReviewClient({
   const [commentText, setCommentText] = useState("");
   const [academicYear, setAcademicYear] = useState("2569");
   const [semester, setSemester] = useState("1");
+  const [showName, setShowName] = useState(true);
+  const [showGrade, setShowGrade] = useState(true);
   const [feedback, setFeedback] = useState<{ ok: boolean; message: string } | null>(
     null
   );
 
-  // Add course modal/panel state
   const [showAddCourse, setShowAddCourse] = useState(false);
+
+  // Sync review form defaults when switching courses or loading existing user review
+  useEffect(() => {
+    if (myExistingReview) {
+      setContentRating(myExistingReview.contentRating);
+      setWorkloadRating(myExistingReview.workloadRating);
+      setGradeDifficultyRating(myExistingReview.gradeDifficultyRating);
+      setCommentText(myExistingReview.commentText);
+      setAcademicYear(myExistingReview.academicYear);
+      setSemester(myExistingReview.semester);
+      setShowName(myExistingReview.showName);
+      setShowGrade(myExistingReview.showGrade);
+    } else {
+      setContentRating(5);
+      setWorkloadRating(3);
+      setGradeDifficultyRating(3);
+      setCommentText("");
+      setShowName(true);
+      setShowGrade(true);
+    }
+  }, [selectedCourse?.courseId, myExistingReview?.reviewId]);
 
   function jumpToOwnMajor() {
     if (!currentUser?.universityId || !currentUser?.facultyId || !currentUser?.majorId) {
@@ -389,12 +413,24 @@ export function CourseReviewClient({
     fd.set("comment_text", commentText);
     fd.set("academic_year", selectedPassedRecord?.academicYear || academicYear);
     fd.set("semester", selectedPassedRecord?.semester || semester);
+    fd.set("show_name", String(showName));
+    fd.set("show_grade", String(showGrade));
 
     startTransition(async () => {
       const res = await submitCourseReviewAction(fd);
       setFeedback(res);
       if (res.ok) {
-        setCommentText("");
+        router.refresh();
+      }
+    });
+  }
+
+  function handleTogglePrivacy(reviewId: number, field: "showName" | "showGrade") {
+    setFeedback(null);
+    startTransition(async () => {
+      const res = await toggleCourseReviewPrivacyAction(reviewId, field);
+      setFeedback(res);
+      if (res.ok) {
         router.refresh();
       }
     });
@@ -417,7 +453,7 @@ export function CourseReviewClient({
   }
 
   const selectClass =
-    "w-full min-h-[44px] sm:min-h-0 sm:h-10 px-3 text-sm rounded-lg bg-paper-bg border border-line-strong text-ink-primary focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20";
+    "w-full min-h-[44px] sm:min-h-0 sm:h-11 px-3 text-sm rounded-lg bg-paper-bg border border-line-strong text-ink-primary focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20";
 
   const canAddCourse = Boolean(
     currentUser &&
@@ -439,14 +475,9 @@ export function CourseReviewClient({
     <div className="max-w-6xl mx-auto space-y-5">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-ink-primary tracking-tight">
-            รีวิวรายวิชามหาวิทยาลัย
-          </h1>
-          <p className="text-sm text-ink-muted">
-            เลือกมหาวิทยาลัย → คณะ → สาขา → ชั้นปี → วิชา เพื่อดูรีวิวเนื้อหา ภาระงาน และความยากในการเก็บเกรด
-          </p>
-        </div>
+        <h1 className="text-xl font-semibold text-ink-primary tracking-tight">
+          รีวิวรายวิชามหาวิทยาลัย
+        </h1>
 
         {canAddCourse && (
           <button
@@ -460,6 +491,22 @@ export function CourseReviewClient({
         )}
       </div>
 
+      {/* Blue System Steps Card */}
+      <div className="rounded-2xl p-4 sm:p-5 bg-sky-50 dark:bg-sky-950/35 border border-sky-200 dark:border-sky-800 text-sky-950 dark:text-sky-100 space-y-1.5">
+        <div className="text-sm font-bold">ขั้นตอนการใช้ระบบ</div>
+        <ol className="list-decimal list-inside text-xs space-y-1 leading-relaxed">
+          <li>
+            เลือก มหาวิทยาลัย → คณะ → สาขา → ชั้นปี → รายวิชา เพื่อดูรีวิวเนื้อหา ภาระงาน และความยากในการเก็บเกรด
+          </li>
+          <li>
+            บันทึกผลการเรียนที่ผ่านแล้ว (เฉพาะรายวิชาในสาขาของตนเอง) เพื่อปลดล็อกสิทธิ์เขียนรีวิว
+          </li>
+          <li>
+            ให้คะแนนและแสดงความคิดเห็น โดยสามารถเลือกเปิดหรือปิดการแสดงชื่อและเกรดของตนเองได้
+          </li>
+        </ol>
+      </div>
+
       {/* Student Academic Affiliation Bar */}
       {isStudent && (
         <div className="bg-paper-surface border border-line rounded-2xl px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-xs">
@@ -469,14 +516,14 @@ export function CourseReviewClient({
               <span>
                 สังกัดของคุณ:{" "}
                 <strong className="text-ink-primary">
-                  {currentUser?.universityName} / {currentUser?.facultyName} /{" "}
-                  {currentUser?.majorName}
-                </strong>{" "}
-                · บันทึกผ่านแล้ว{" "}
-                <strong className="text-ink-primary tabular-nums">
-                  {currentUser?.passedCourses.length || 0}
-                </strong>{" "}
-                วิชา
+                  {[
+                    currentUser?.facultyName,
+                    currentUser?.majorName,
+                    currentUser?.universityName,
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                </strong>
               </span>
             ) : (
               <span className="text-amber-700 dark:text-amber-300">
@@ -497,17 +544,17 @@ export function CourseReviewClient({
         </div>
       )}
 
-      {/* 5-Level Cascading Filter Bar */}
+      {/* 5-Level Cascading Filter Bar (No numbers, รายวิชา on new line) */}
       <section
         aria-label="ตัวกรองรายวิชา"
-        className="bg-paper-surface border border-line rounded-2xl p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3"
+        className="bg-paper-surface border border-line rounded-2xl p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
       >
         <div>
           <label
             htmlFor="filter_uni"
             className="block text-xs font-medium text-ink-muted mb-1"
           >
-            1. มหาวิทยาลัย
+            มหาวิทยาลัย
           </label>
           <select
             id="filter_uni"
@@ -528,7 +575,7 @@ export function CourseReviewClient({
             htmlFor="filter_fac"
             className="block text-xs font-medium text-ink-muted mb-1"
           >
-            2. คณะ
+            คณะ
           </label>
           <select
             id="filter_fac"
@@ -549,7 +596,7 @@ export function CourseReviewClient({
             htmlFor="filter_major"
             className="block text-xs font-medium text-ink-muted mb-1"
           >
-            3. สาขา
+            สาขา
           </label>
           <select
             id="filter_major"
@@ -570,7 +617,7 @@ export function CourseReviewClient({
             htmlFor="filter_year"
             className="block text-xs font-medium text-ink-muted mb-1"
           >
-            4. ชั้นปี
+            ชั้นปี
           </label>
           <select
             id="filter_year"
@@ -586,12 +633,12 @@ export function CourseReviewClient({
           </select>
         </div>
 
-        <div>
+        <div className="sm:col-span-2 lg:col-span-4">
           <label
             htmlFor="filter_course"
             className="block text-xs font-medium text-ink-muted mb-1"
           >
-            5. รายวิชา ({filteredCourses.length})
+            รายวิชา ({filteredCourses.length})
           </label>
           <select
             id="filter_course"
@@ -673,7 +720,7 @@ export function CourseReviewClient({
             <button
               type="submit"
               disabled={isPending}
-              className="w-full min-h-[44px] sm:min-h-0 sm:h-10 px-4 rounded-lg bg-brand hover:bg-brand-hover text-white dark:text-zinc-950 text-sm font-medium"
+              className="w-full min-h-[44px] sm:min-h-0 sm:h-11 px-4 rounded-lg bg-brand hover:bg-brand-hover text-white dark:text-zinc-950 text-sm font-medium"
             >
               บันทึกรายวิชา
             </button>
@@ -691,30 +738,13 @@ export function CourseReviewClient({
           {/* Left: Course Summary + Reviews List (7 cols) */}
           <div className="lg:col-span-7 space-y-4">
             <div className="bg-paper-surface border border-line rounded-2xl p-5 space-y-4">
-              <div className="flex flex-wrap items-start justify-between gap-2 pb-3 border-b border-line">
-                <div className="space-y-1">
-                  <div className="flex flex-wrap items-center gap-2 text-xs">
-                    <span className="font-mono font-semibold px-2 py-0.5 rounded bg-brand-subtle text-brand">
-                      {selectedCourse.courseCode}
-                    </span>
-                    <span className="px-2 py-0.5 rounded bg-paper-muted text-ink-secondary">
-                      ชั้นปีที่ {selectedCourse.yearLevel}
-                    </span>
-                    <span className="text-ink-muted">
-                      {selectedCourse.credits} หน่วยกิต
-                    </span>
-                    {selectedPassedRecord && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-medium">
-                        <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
-                        ผ่านแล้ว (เกรด {selectedPassedRecord.grade})
-                      </span>
-                    )}
-                  </div>
-                  <h2 className="text-lg font-semibold text-ink-primary flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-brand flex-shrink-0" aria-hidden="true" />
-                    {selectedCourse.courseName}
-                  </h2>
-                </div>
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-line">
+                <h2 className="text-lg font-semibold text-ink-primary flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-brand flex-shrink-0" aria-hidden="true" />
+                  <span>
+                    {selectedCourse.courseCode} {selectedCourse.courseName}
+                  </span>
+                </h2>
                 <span className="text-xs text-ink-muted tabular-nums">
                   {selectedCourse.reviews.length} รีวิว
                 </span>
@@ -724,21 +754,21 @@ export function CourseReviewClient({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <MetricBar
                   label="เนื้อหา"
-                  hint="1 พื้นฐาน — 5 เข้มข้น/นำไปใช้ได้จริง"
+                  hint="สามารถนำไปใช้ได้จริง"
                   value={contentAvg}
                   icon={<Star className="w-3.5 h-3.5 text-amber-500" aria-hidden="true" />}
                   barClass="bg-emerald-500"
                 />
                 <MetricBar
                   label="ภาระงาน"
-                  hint="1 เบา — 5 งาน/โปรเจกต์เยอะ"
+                  hint="ภาระงาน"
                   value={workloadAvg}
                   icon={<Briefcase className="w-3.5 h-3.5 text-sky-500" aria-hidden="true" />}
                   barClass="bg-sky-500"
                 />
                 <MetricBar
                   label="ความยากเก็บเกรด"
-                  hint="1 เก็บง่าย — 5 เก็บเกรดยาก"
+                  hint="ความยากในการเก็บเกรด"
                   value={gradeAvg}
                   icon={<Award className="w-3.5 h-3.5 text-rose-500" aria-hidden="true" />}
                   barClass="bg-amber-500"
@@ -746,7 +776,7 @@ export function CourseReviewClient({
               </div>
             </div>
 
-            {/* Individual Reviews */}
+            {/* Individual Reviews (Multiple reviewers supported + Show/Hide Name & Grade) */}
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-ink-primary inline-flex items-center gap-1.5">
                 <MessageSquare className="w-4 h-4 text-brand" aria-hidden="true" />
@@ -764,9 +794,16 @@ export function CourseReviewClient({
                     className="bg-paper-surface border border-line rounded-2xl p-4 space-y-2.5"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                      <span className="font-semibold text-ink-primary">
-                        {rev.reviewerName}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold text-ink-primary">
+                          {rev.reviewerName}
+                        </span>
+                        {rev.reviewerGrade && (
+                          <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-mono font-semibold">
+                            เกรด {rev.reviewerGrade}
+                          </span>
+                        )}
+                      </div>
                       <span className="text-ink-muted tabular-nums">
                         ปี {rev.academicYear} / เทอม {rev.semester}
                       </span>
@@ -787,6 +824,37 @@ export function CourseReviewClient({
                     <p className="text-sm text-ink-secondary whitespace-pre-line leading-relaxed">
                       {rev.commentText}
                     </p>
+
+                    {rev.isMine && (
+                      <div className="pt-2 border-t border-line flex flex-wrap items-center gap-2 text-xs">
+                        <button
+                          type="button"
+                          disabled={isPending}
+                          onClick={() => handleTogglePrivacy(rev.reviewId, "showName")}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-line-strong text-ink-secondary hover:text-ink-primary hover:bg-paper-muted transition-colors"
+                        >
+                          {rev.showName ? (
+                            <Eye className="w-3.5 h-3.5" />
+                          ) : (
+                            <EyeOff className="w-3.5 h-3.5" />
+                          )}
+                          {rev.showName ? "เปิดชื่ออยู่ (คลิกเพื่อซ่อน)" : "ซ่อนชื่ออยู่ (คลิกเพื่อเปิด)"}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isPending}
+                          onClick={() => handleTogglePrivacy(rev.reviewId, "showGrade")}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-line-strong text-ink-secondary hover:text-ink-primary hover:bg-paper-muted transition-colors"
+                        >
+                          {rev.showGrade ? (
+                            <Eye className="w-3.5 h-3.5" />
+                          ) : (
+                            <EyeOff className="w-3.5 h-3.5" />
+                          )}
+                          {rev.showGrade ? "เปิดเกรดอยู่ (คลิกเพื่อซ่อน)" : "ซ่อนเกรดอยู่ (คลิกเพื่อเปิด)"}
+                        </button>
+                      </div>
+                    )}
                   </article>
                 ))
               )}
@@ -797,7 +865,9 @@ export function CourseReviewClient({
           <aside className="lg:col-span-5 lg:sticky lg:top-20">
             <div className="bg-paper-surface border border-line rounded-2xl p-5 space-y-4">
               <h3 className="text-base font-semibold text-ink-primary pb-2.5 border-b border-line">
-                เขียนรีวิววิชา {selectedCourse.courseCode}
+                {myExistingReview
+                  ? `แก้ไขรีวิววิชา ${selectedCourse.courseCode}`
+                  : `เขียนรีวิววิชา ${selectedCourse.courseCode}`}
               </h3>
 
               {!currentUser ? (
@@ -834,11 +904,17 @@ export function CourseReviewClient({
                       <strong className="text-ink-primary">
                         มหาวิทยาลัย คณะ และสาขาของตนเอง
                       </strong>{" "}
-                      และต้องเป็นรายวิชาที่เรียนผ่านแล้วเท่านั้น (คุณยังสามารถอ่านรีวิวของทุกสถาบันได้ตามปกติ)
+                      และต้องเป็นรายวิชาที่เรียนผ่านแล้วเท่านั้น
                     </p>
                     <p className="text-xs text-ink-muted">
-                      สังกัดของคุณ: {currentUser.universityName} / {currentUser.facultyName} /{" "}
-                      {currentUser.majorName}
+                      สังกัดของคุณ:{" "}
+                      {[
+                        currentUser.facultyName,
+                        currentUser.majorName,
+                        currentUser.universityName,
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
                     </p>
                   </div>
                   <button
@@ -931,7 +1007,7 @@ export function CourseReviewClient({
                         {selectedPassedRecord.academicYear} เทอม{" "}
                         {selectedPassedRecord.semester})
                       </span>
-                      {!hasExistingUserReview && (
+                      {!myExistingReview && (
                         <button
                           type="button"
                           onClick={handleRemovePassedCourse}
@@ -947,19 +1023,19 @@ export function CourseReviewClient({
 
                   <ScorePicker
                     label="เนื้อหา (Content)"
-                    hint="1 น้อย → 5 ดีมาก"
+                    hint="สามารถนำไปใช้ได้จริง"
                     value={contentRating}
                     onChange={setContentRating}
                   />
                   <ScorePicker
                     label="ภาระงาน (Workload)"
-                    hint="1 เบา → 5 หนักมาก"
+                    hint="ภาระงาน"
                     value={workloadRating}
                     onChange={setWorkloadRating}
                   />
                   <ScorePicker
                     label="ความยากในการเก็บเกรด"
-                    hint="1 ง่าย → 5 ยากมาก"
+                    hint="ความยากในการเก็บเกรด"
                     value={gradeDifficultyRating}
                     onChange={setGradeDifficultyRating}
                   />
@@ -998,6 +1074,31 @@ export function CourseReviewClient({
                     </div>
                   </div>
 
+                  {/* Privacy Switches: Show/Hide Name & Grade */}
+                  <div className="p-3 rounded-xl bg-paper-bg border border-line space-y-2 text-xs">
+                    <div className="font-medium text-ink-primary">
+                      การแสดงข้อมูลส่วนตัวในรีวิว
+                    </div>
+                    <label className="flex items-center justify-between gap-2 cursor-pointer">
+                      <span className="text-ink-secondary">แสดงชื่อผู้รีวิว</span>
+                      <input
+                        type="checkbox"
+                        checked={showName}
+                        onChange={(e) => setShowName(e.target.checked)}
+                        className="w-4 h-4 accent-zinc-900 dark:accent-zinc-100 rounded"
+                      />
+                    </label>
+                    <label className="flex items-center justify-between gap-2 cursor-pointer">
+                      <span className="text-ink-secondary">แสดงเกรดที่ได้ในวิชานี้</span>
+                      <input
+                        type="checkbox"
+                        checked={showGrade}
+                        onChange={(e) => setShowGrade(e.target.checked)}
+                        className="w-4 h-4 accent-zinc-900 dark:accent-zinc-100 rounded"
+                      />
+                    </label>
+                  </div>
+
                   <div>
                     <label
                       htmlFor="course_comment"
@@ -1022,7 +1123,11 @@ export function CourseReviewClient({
                     className="w-full min-h-[44px] px-4 py-2 rounded-lg bg-brand hover:bg-brand-hover text-white dark:text-zinc-950 text-sm font-medium inline-flex items-center justify-center gap-1.5 disabled:opacity-60 transition-colors"
                   >
                     <Send className="w-4 h-4" aria-hidden="true" />
-                    {isPending ? "กำลังบันทึก..." : "ส่งรีวิวรายวิชา"}
+                    {isPending
+                      ? "กำลังบันทึก..."
+                      : myExistingReview
+                        ? "อัปเดตรีวิวรายวิชา"
+                        : "ส่งรีวิวรายวิชา"}
                   </button>
                 </form>
               )}

@@ -106,10 +106,10 @@ export function RegisterFormClient({
         <div className="p-5 border-b border-line flex items-center justify-between gap-4">
           <div>
             <h1 className="text-lg font-semibold text-ink-primary">
-              สมัครสมาชิก EST
+              สมัครสมาชิก UNINFO
             </h1>
             <p className="text-xs text-ink-secondary mt-0.5">
-              เลือกมหาวิทยาลัย คณะ และแนบหลักฐานสถานภาพ ระบบจะสร้างรหัสผู้ใช้ 10 หลักให้อัตโนมัติ
+              เลือกมหาวิทยาลัย คณะ สาขา และแนบหลักฐานสถานภาพ เพื่อรอผู้ดูแลระบบอนุมัติก่อนเข้าใช้งาน
             </p>
           </div>
           <Link
@@ -138,12 +138,6 @@ export function RegisterFormClient({
                 className="px-4 py-2 rounded-lg bg-brand hover:bg-brand-hover text-white dark:text-zinc-950 text-sm font-medium transition-colors"
               >
                 ไปหน้าเข้าสู่ระบบ
-              </Link>
-              <Link
-                href="/"
-                className="px-4 py-2 rounded-lg border border-line-strong text-ink-secondary hover:text-ink-primary text-sm font-medium transition-colors"
-              >
-                กลับหน้าแรก
               </Link>
             </div>
           </div>
@@ -398,10 +392,10 @@ export function RegisterFormClient({
                 {loading ? "กำลังส่งคำขอ..." : "ส่งคำขอสมัครสมาชิก"}
               </button>
               <Link
-                href="/"
+                href="/login"
                 className="min-h-[44px] sm:min-h-0 sm:h-10 px-4 inline-flex items-center justify-center rounded-lg border border-line-strong text-ink-secondary hover:text-ink-primary text-sm font-medium transition-colors"
               >
-                ยกเลิก
+                กลับหน้าเข้าสู่ระบบ
               </Link>
             </div>
           </form>

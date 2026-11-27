@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { getSessionUser } from "@/lib/auth";
-import { Navbar, Footer } from "@/components/Navbar";
+import { Navbar } from "@/components/Navbar";
 
 export const metadata: Metadata = {
-  title: "EST — แพลตฟอร์มสถานประกอบการฝึกงานระดับอุดมศึกษา",
+  title: "UNINFO — แพลตฟอร์มฝึกงานและรีวิวสำหรับนักศึกษามหาวิทยาลัย",
   description:
-    "แพลตฟอร์มรวบรวมสถานประกอบการและรีวิวการฝึกงานสำหรับอาจารย์และนักศึกษามหาวิทยาลัย",
+    "UNINFO แพลตฟอร์มรีวิวสายอาชีพ สถานที่ฝึกงาน รีวิวรายวิชา และระบบติดตามการฝึกงานเฉพาะมหาวิทยาลัยของคุณ",
 };
 
 const themeInitScript = `
@@ -45,10 +45,9 @@ export default async function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col bg-paper-bg text-ink-primary">
         <Navbar user={user} />
-        <main className="flex-grow max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-5">
+        <main className="flex-grow max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-6">
           {children}
         </main>
-        <Footer isLoggedIn={!!user} />
       </body>
     </html>
   );

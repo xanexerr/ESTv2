@@ -28,12 +28,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto my-6">
-      <div className="bg-paper-surface rounded-xl border border-line p-6 space-y-5">
-        <div>
-          <h1 className="text-xl font-semibold text-ink-primary">เข้าสู่ระบบ EST</h1>
-          <p className="text-xs text-ink-secondary mt-1">
-            สำหรับอาจารย์ นักศึกษามหาวิทยาลัย และผู้ดูแลระบบ
+    <div className="max-w-md mx-auto my-8">
+      <div className="bg-paper-surface rounded-2xl border border-line p-7 space-y-5">
+        <div className="space-y-1.5">
+          <div className="inline-flex items-center px-2.5 py-1 rounded-lg bg-brand text-white dark:text-zinc-950 font-mono text-xs font-bold tracking-wider">
+            UNINFO
+          </div>
+          <h1 className="text-xl font-semibold text-ink-primary">เข้าสู่ระบบ UNINFO</h1>
+          <p className="text-xs text-ink-secondary">
+            เข้าสู่ระบบเพื่อดูรีวิวสายอาชีพ สถานที่ฝึกงาน และรีวิวรายวิชาในมหาวิทยาลัยของคุณ
           </p>
         </div>
 

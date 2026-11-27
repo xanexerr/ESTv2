@@ -405,7 +405,7 @@ export function ReviewFormClient({
 
       <div>
         <label className="block text-xs font-medium text-ink-secondary mb-1.5">
-          ให้คะแนนสถานประกอบการ (1–5 ดาว)
+          ให้คะแนนสถานประกอบการ
         </label>
         <div className="p-3.5 rounded-xl bg-paper-bg border border-line flex items-center justify-between">
           <div className="flex items-center gap-1.5">

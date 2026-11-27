@@ -9,6 +9,17 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      // Larger typography scale (+4pt total over base Tailwind) across UNINFO
+      fontSize: {
+        xs: ["1.0625rem", { lineHeight: "1.45rem" }], // 17px
+        sm: ["1.1875rem", { lineHeight: "1.65rem" }], // 19px
+        base: ["1.3125rem", { lineHeight: "1.9rem" }], // 21px
+        lg: ["1.4375rem", { lineHeight: "2rem" }], // 23px
+        xl: ["1.625rem", { lineHeight: "2.2rem" }], // 26px
+        "2xl": ["1.875rem", { lineHeight: "2.45rem" }], // 30px
+        "3xl": ["2.25rem", { lineHeight: "2.75rem" }], // 36px
+        "4xl": ["2.625rem", { lineHeight: "3rem" }], // 42px
+      },
       colors: {
         brand: {
           DEFAULT: "var(--brand)",

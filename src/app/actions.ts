@@ -59,10 +59,14 @@ export async function loginAction(formData: FormData): Promise<ActionResult> {
   });
 
   revalidatePath("/");
+  revalidatePath("/career-reviews");
+  revalidatePath("/internships");
+  revalidatePath("/courses");
+  revalidatePath("/my-career");
   return {
     ok: true,
     message: "เข้าสู่ระบบสำเร็จ",
-    redirectTo: user.role === "admin" ? "/admin/approvals" : "/",
+    redirectTo: user.role === "admin" ? "/admin/approvals" : "/career-reviews",
   };
 }
 
@@ -204,7 +208,7 @@ export async function adminUpdateAccountStatusAction(
 export async function logoutAction(): Promise<ActionResult> {
   await clearSessionCookie();
   revalidatePath("/");
-  return { ok: true, message: "ออกจากระบบเรียบร้อยแล้ว", redirectTo: "/" };
+  return { ok: true, message: "ออกจากระบบเรียบร้อยแล้ว", redirectTo: "/login" };
 }
 
 /* ==========================================================================

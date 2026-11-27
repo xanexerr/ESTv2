@@ -1,23 +1,27 @@
 import React from "react";
 import { redirect } from "next/navigation";
-import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  getCurrentUserContext,
+  buildUniversityWorkplaceWhere,
+} from "@/lib/university-scope";
 import { StudentInternshipsClient } from "@/components/StudentInternshipsClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function StudentInternshipsPage() {
-  const session = await getSessionUser();
-  if (!session) redirect("/login");
-  if (session.role !== "student") redirect("/");
+  const currentUser = await getCurrentUserContext();
+  if (!currentUser) redirect("/login");
+  if (currentUser.role !== "student") redirect("/my-career");
 
-  const [student, rounds, workplaces, advisors] = await Promise.all([
-    prisma.user.findUnique({
-      where: { userId: session.userId },
-      select: { academicYear: true },
-    }),
+  const scopeWhere = buildUniversityWorkplaceWhere(
+    currentUser.universityId,
+    currentUser.role
+  );
+
+  const [rounds, workplaces, advisors] = await Promise.all([
     prisma.internshipRound.findMany({
-      where: { studentId: session.userId },
+      where: { studentId: currentUser.userId },
       orderBy: [{ roundNumber: "desc" }],
       include: {
         workplace: {
@@ -32,12 +36,18 @@ export default async function StudentInternshipsPage() {
       },
     }),
     prisma.workplace.findMany({
-      where: { show: true },
+      where: scopeWhere,
       orderBy: { workplaceName: "asc" },
       select: { workplaceId: true, workplaceName: true, workType: true },
     }),
     prisma.user.findMany({
-      where: { role: "teacher", status: "approved" },
+      where: {
+        role: "teacher",
+        status: "approved",
+        ...(currentUser.universityId
+          ? { universityId: currentUser.universityId }
+          : {}),
+      },
       orderBy: { userFname: "asc" },
       select: {
         userId: true,
@@ -47,6 +57,8 @@ export default async function StudentInternshipsPage() {
       },
     }),
   ]);
+
+  const defaultAcademicYear = currentUser.academicYear || "2569";
 
   const serializedRounds = rounds.map((r) => ({
     roundId: r.roundId,
@@ -69,7 +81,7 @@ export default async function StudentInternshipsPage() {
       rounds={serializedRounds}
       workplaces={workplaces}
       advisors={advisors}
-      defaultAcademicYear={student?.academicYear || "2569"}
+      defaultAcademicYear={defaultAcademicYear}
     />
   );
 }

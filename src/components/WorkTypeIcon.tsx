@@ -1,19 +1,54 @@
 import React from "react";
-import { Star } from "lucide-react";
+import {
+  Star,
+  LayoutGrid,
+  Code2,
+  Palette,
+  Network,
+  Globe,
+  Headphones,
+  Briefcase,
+} from "lucide-react";
 import { getWorkTypeMeta } from "@/lib/constants";
 
 /**
- * Quiet category label with a 6px status dot (replaces multi-colored icon tiles)
+ * Icon corresponding to each internship work type category
+ */
+export function WorkTypeCategoryIcon({
+  type,
+  className = "w-4 h-4 flex-shrink-0",
+}: {
+  type?: string | null;
+  className?: string;
+}) {
+  const clean = (type || "").trim();
+  switch (clean) {
+    case "":
+    case "ทั้งหมด":
+      return <LayoutGrid strokeWidth={1.75} className={className} aria-hidden="true" />;
+    case "เขียนโปรแกรม":
+      return <Code2 strokeWidth={1.75} className={className} aria-hidden="true" />;
+    case "ทำกราฟิก":
+      return <Palette strokeWidth={1.75} className={className} aria-hidden="true" />;
+    case "ระบบเครือข่าย":
+      return <Network strokeWidth={1.75} className={className} aria-hidden="true" />;
+    case "ทำเว็บไซต์":
+      return <Globe strokeWidth={1.75} className={className} aria-hidden="true" />;
+    case "ด้านบริการ":
+      return <Headphones strokeWidth={1.75} className={className} aria-hidden="true" />;
+    default:
+      return <Briefcase strokeWidth={1.75} className={className} aria-hidden="true" />;
+  }
+}
+
+/**
+ * Category label badge with icon
  */
 export function WorkTypeBadge({ type }: { type?: string | null }) {
   const meta = getWorkTypeMeta(type);
   return (
-    <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md text-xs font-medium bg-paper-muted text-ink-secondary border border-line">
-      <span
-        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-        aria-hidden="true"
-        style={{ backgroundColor: meta.dotColor }}
-      />
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-paper-muted text-ink-secondary border border-line">
+      <WorkTypeCategoryIcon type={meta.key} className="w-3.5 h-3.5 flex-shrink-0" />
       {meta.label}
     </span>
   );

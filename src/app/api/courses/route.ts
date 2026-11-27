@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUserContext } from "@/lib/university-scope";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  const currentUser = await getCurrentUserContext();
+  if (!currentUser) {
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(req.url);
-  const universityId = searchParams.get("universityId");
+  const universityId =
+    currentUser.role !== "admin" && currentUser.universityId
+      ? String(currentUser.universityId)
+      : searchParams.get("universityId");
   const facultyId = searchParams.get("facultyId");
   const majorId = searchParams.get("majorId");
   const yearLevel = searchParams.get("yearLevel");
