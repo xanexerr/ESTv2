@@ -91,11 +91,29 @@ model Course {
   yearLevel  Int            @default(1) @map("year_level")
   credits    Int            @default(3)
 
-  major      Major          @relation(fields: [majorId], references: [majorId], onDelete: Cascade)
-  reviews    CourseReview[]
+  major         Major                 @relation(fields: [majorId], references: [majorId], onDelete: Cascade)
+  reviews       CourseReview[]
+  passedByUsers StudentPassedCourse[]
 
   @@unique([majorId, courseCode])
   @@map("courses")
+}
+
+model StudentPassedCourse {
+  passedId     Int      @id @default(autoincrement()) @map("passed_id")
+  userId       String   @map("user_id")
+  courseId     Int      @map("course_id")
+  grade        String   @default("S")
+  academicYear String   @default("2569") @map("academic_year")
+  semester     String   @default("1")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user         User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  course       Course   @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@map("student_passed_courses")
 }
 
 model CourseReview {
@@ -164,7 +182,8 @@ model User {
   workplace          Workplace?        @relation("SelectedWorkplace", fields: [workplaceId], references: [workplaceId], onDelete: SetNull)
   comments           Comment[]
   courseReviews      CourseReview[]
-  studentInternships InternshipRound[] @relation("StudentInternships")
+  passedCourses      StudentPassedCourse[]
+  studentInternships InternshipRound[]     @relation("StudentInternships")
   advisorInternships InternshipRound[] @relation("AdvisorInternships")
   reviewedReports    PeriodReport[]    @relation("ReviewedReports")
 

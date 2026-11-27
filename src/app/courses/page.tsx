@@ -1,7 +1,10 @@
 import React from "react";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
-import { CourseReviewClient } from "@/components/CourseReviewClient";
+import {
+  CourseReviewClient,
+  type CurrentCourseUser,
+} from "@/components/CourseReviewClient";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +40,45 @@ export default async function CoursesPage() {
       },
     }),
   ]);
+
+  let currentUser: CurrentCourseUser | null = null;
+  if (session) {
+    const dbUser = await prisma.user.findUnique({
+      where: { userId: session.userId },
+      select: {
+        userId: true,
+        role: true,
+        universityId: true,
+        facultyId: true,
+        majorId: true,
+        university: { select: { name: true } },
+        faculty: { select: { name: true } },
+        major: { select: { name: true } },
+        passedCourses: {
+          select: {
+            courseId: true,
+            grade: true,
+            academicYear: true,
+            semester: true,
+          },
+        },
+      },
+    });
+
+    if (dbUser) {
+      currentUser = {
+        userId: dbUser.userId,
+        role: dbUser.role,
+        universityId: dbUser.universityId,
+        facultyId: dbUser.facultyId,
+        majorId: dbUser.majorId,
+        universityName: dbUser.university?.name ?? null,
+        facultyName: dbUser.faculty?.name ?? null,
+        majorName: dbUser.major?.name ?? null,
+        passedCourses: dbUser.passedCourses,
+      };
+    }
+  }
 
   const serialized = universities.map((u) => ({
     universityId: u.universityId,
@@ -77,7 +119,7 @@ export default async function CoursesPage() {
   return (
     <CourseReviewClient
       universities={serialized}
-      currentUserId={session?.userId || null}
+      currentUser={currentUser}
     />
   );
 }

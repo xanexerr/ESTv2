@@ -11,10 +11,16 @@ import {
   MessageSquare,
   Send,
   Plus,
+  CheckCircle2,
+  Lock,
+  GraduationCap,
+  X,
 } from "lucide-react";
 import {
   submitCourseReviewAction,
   createCourseAction,
+  recordPassedCourseAction,
+  removePassedCourseAction,
 } from "@/app/course-actions";
 
 export interface CourseReviewData {
@@ -56,6 +62,27 @@ export interface AcademicTreeNode {
     }[];
   }[];
 }
+
+export interface PassedCourseRecord {
+  courseId: number;
+  grade: string;
+  academicYear: string;
+  semester: string;
+}
+
+export interface CurrentCourseUser {
+  userId: string;
+  role: "admin" | "teacher" | "student";
+  universityId: number | null;
+  facultyId: number | null;
+  majorId: number | null;
+  universityName: string | null;
+  facultyName: string | null;
+  majorName: string | null;
+  passedCourses: PassedCourseRecord[];
+}
+
+const PASSING_GRADE_OPTIONS = ["A", "B+", "B", "C+", "C", "D+", "D", "S"] as const;
 
 function avg(nums: number[]): number {
   if (nums.length === 0) return 0;
@@ -138,17 +165,41 @@ function ScorePicker({
 
 export function CourseReviewClient({
   universities,
-  currentUserId,
+  currentUser,
 }: {
   universities: AcademicTreeNode[];
-  currentUserId: string | null;
+  currentUser: CurrentCourseUser | null;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
+  const isStudent = currentUser?.role === "student";
+
+  // Resolve initial selection: default to student's own university/faculty/major if available
+  const initialUni =
+    (isStudent && currentUser?.universityId
+      ? universities.find((u) => u.universityId === currentUser.universityId)
+      : null) ||
+    universities[0] ||
+    null;
+
+  const initialFac =
+    (isStudent && currentUser?.facultyId
+      ? initialUni?.faculties.find((f) => f.facultyId === currentUser.facultyId)
+      : null) ||
+    initialUni?.faculties[0] ||
+    null;
+
+  const initialMajor =
+    (isStudent && currentUser?.majorId
+      ? initialFac?.majors.find((m) => m.majorId === currentUser.majorId)
+      : null) ||
+    initialFac?.majors[0] ||
+    null;
+
   // 5-Level Cascading State: University -> Faculty -> Major -> Year -> Course
   const [uniId, setUniId] = useState<string>(
-    universities[0] ? String(universities[0].universityId) : ""
+    initialUni ? String(initialUni.universityId) : ""
   );
   const selectedUni = useMemo(
     () => universities.find((u) => String(u.universityId) === uniId) || null,
@@ -156,9 +207,7 @@ export function CourseReviewClient({
   );
 
   const [facId, setFacId] = useState<string>(
-    universities[0]?.faculties[0]
-      ? String(universities[0].faculties[0].facultyId)
-      : ""
+    initialFac ? String(initialFac.facultyId) : ""
   );
   const selectedFac = useMemo(
     () =>
@@ -167,9 +216,7 @@ export function CourseReviewClient({
   );
 
   const [majorId, setMajorId] = useState<string>(
-    universities[0]?.faculties[0]?.majors[0]
-      ? String(universities[0].faculties[0].majors[0].majorId)
-      : ""
+    initialMajor ? String(initialMajor.majorId) : ""
   );
   const selectedMajor = useMemo(
     () =>
@@ -186,9 +233,7 @@ export function CourseReviewClient({
   }, [selectedMajor, yearFilter]);
 
   const [courseId, setCourseId] = useState<string>(
-    universities[0]?.faculties[0]?.majors[0]?.courses[0]
-      ? String(universities[0].faculties[0].majors[0].courses[0].courseId)
-      : ""
+    initialMajor?.courses[0] ? String(initialMajor.courses[0].courseId) : ""
   );
 
   const selectedCourse = useMemo(
@@ -198,6 +243,42 @@ export function CourseReviewClient({
       null,
     [filteredCourses, courseId]
   );
+
+  // Map of passed courses for quick lookup
+  const passedCourseMap = useMemo(() => {
+    const map = new Map<number, PassedCourseRecord>();
+    for (const rec of currentUser?.passedCourses || []) {
+      map.set(rec.courseId, rec);
+    }
+    return map;
+  }, [currentUser]);
+
+  const hasStudentAffiliation = Boolean(
+    currentUser?.universityId && currentUser?.facultyId && currentUser?.majorId
+  );
+
+  const isOwnAcademicScope = Boolean(
+    isStudent &&
+      hasStudentAffiliation &&
+      selectedUni?.universityId === currentUser?.universityId &&
+      selectedFac?.facultyId === currentUser?.facultyId &&
+      selectedMajor?.majorId === currentUser?.majorId
+  );
+
+  const selectedPassedRecord = selectedCourse
+    ? passedCourseMap.get(selectedCourse.courseId) || null
+    : null;
+
+  const hasExistingUserReview = Boolean(
+    selectedCourse &&
+      currentUser &&
+      selectedCourse.reviews.some((r) => r.userId === currentUser.userId)
+  );
+
+  // Passed-course form state
+  const [passedGrade, setPassedGrade] = useState<string>("A");
+  const [passedYear, setPassedYear] = useState<string>("2568");
+  const [passedSemester, setPassedSemester] = useState<string>("1");
 
   // Review form state
   const [contentRating, setContentRating] = useState(5);
@@ -212,6 +293,22 @@ export function CourseReviewClient({
 
   // Add course modal/panel state
   const [showAddCourse, setShowAddCourse] = useState(false);
+
+  function jumpToOwnMajor() {
+    if (!currentUser?.universityId || !currentUser?.facultyId || !currentUser?.majorId) {
+      return;
+    }
+    const u = universities.find((x) => x.universityId === currentUser.universityId);
+    const f = u?.faculties.find((x) => x.facultyId === currentUser.facultyId);
+    const m = f?.majors.find((x) => x.majorId === currentUser.majorId);
+    if (!u || !f || !m) return;
+    setUniId(String(u.universityId));
+    setFacId(String(f.facultyId));
+    setMajorId(String(m.majorId));
+    setYearFilter("all");
+    setCourseId(m.courses[0] ? String(m.courses[0].courseId) : "");
+    setFeedback(null);
+  }
 
   function handleUniChange(nextUniId: string) {
     setUniId(nextUniId);
@@ -244,6 +341,42 @@ export function CourseReviewClient({
     setCourseId(m?.courses[0] ? String(m.courses[0].courseId) : "");
   }
 
+  function handleRecordPassedCourse(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedCourse) return;
+    setFeedback(null);
+    const fd = new FormData();
+    fd.set("course_id", String(selectedCourse.courseId));
+    fd.set("grade", passedGrade);
+    fd.set("academic_year", passedYear);
+    fd.set("semester", passedSemester);
+
+    startTransition(async () => {
+      const res = await recordPassedCourseAction(fd);
+      setFeedback(res);
+      if (res.ok) {
+        setAcademicYear(passedYear);
+        setSemester(passedSemester);
+        router.refresh();
+      }
+    });
+  }
+
+  function handleRemovePassedCourse() {
+    if (!selectedCourse) return;
+    setFeedback(null);
+    const fd = new FormData();
+    fd.set("course_id", String(selectedCourse.courseId));
+
+    startTransition(async () => {
+      const res = await removePassedCourseAction(fd);
+      setFeedback(res);
+      if (res.ok) {
+        router.refresh();
+      }
+    });
+  }
+
   function handleSubmitReview(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedCourse) return;
@@ -254,8 +387,8 @@ export function CourseReviewClient({
     fd.set("workload_rating", String(workloadRating));
     fd.set("grade_difficulty_rating", String(gradeDifficultyRating));
     fd.set("comment_text", commentText);
-    fd.set("academic_year", academicYear);
-    fd.set("semester", semester);
+    fd.set("academic_year", selectedPassedRecord?.academicYear || academicYear);
+    fd.set("semester", selectedPassedRecord?.semester || semester);
 
     startTransition(async () => {
       const res = await submitCourseReviewAction(fd);
@@ -286,6 +419,12 @@ export function CourseReviewClient({
   const selectClass =
     "w-full min-h-[44px] sm:min-h-0 sm:h-10 px-3 text-sm rounded-lg bg-paper-bg border border-line-strong text-ink-primary focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20";
 
+  const canAddCourse = Boolean(
+    currentUser &&
+      selectedMajor &&
+      (!isStudent || isOwnAcademicScope)
+  );
+
   const contentAvg = selectedCourse
     ? avg(selectedCourse.reviews.map((r) => r.contentRating))
     : 0;
@@ -309,7 +448,7 @@ export function CourseReviewClient({
           </p>
         </div>
 
-        {currentUserId && selectedMajor && (
+        {canAddCourse && (
           <button
             type="button"
             onClick={() => setShowAddCourse((p) => !p)}
@@ -320,6 +459,43 @@ export function CourseReviewClient({
           </button>
         )}
       </div>
+
+      {/* Student Academic Affiliation Bar */}
+      {isStudent && (
+        <div className="bg-paper-surface border border-line rounded-2xl px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-2 text-ink-secondary">
+            <GraduationCap className="w-4 h-4 text-brand flex-shrink-0" aria-hidden="true" />
+            {hasStudentAffiliation ? (
+              <span>
+                สังกัดของคุณ:{" "}
+                <strong className="text-ink-primary">
+                  {currentUser?.universityName} / {currentUser?.facultyName} /{" "}
+                  {currentUser?.majorName}
+                </strong>{" "}
+                · บันทึกผ่านแล้ว{" "}
+                <strong className="text-ink-primary tabular-nums">
+                  {currentUser?.passedCourses.length || 0}
+                </strong>{" "}
+                วิชา
+              </span>
+            ) : (
+              <span className="text-amber-700 dark:text-amber-300">
+                บัญชีของคุณยังไม่ได้ผูกข้อมูลมหาวิทยาลัย คณะ และสาขา จึงยังไม่สามารถเขียนรีวิวรายวิชาได้
+              </span>
+            )}
+          </div>
+
+          {hasStudentAffiliation && !isOwnAcademicScope && (
+            <button
+              type="button"
+              onClick={jumpToOwnMajor}
+              className="px-3 py-1.5 rounded-lg bg-brand text-white dark:text-zinc-950 font-medium hover:bg-brand-hover transition-colors"
+            >
+              กลับไปยังสาขาของฉัน
+            </button>
+          )}
+        </div>
+      )}
 
       {/* 5-Level Cascading Filter Bar */}
       <section
@@ -427,11 +603,15 @@ export function CourseReviewClient({
             {filteredCourses.length === 0 ? (
               <option value="">ไม่มีรายวิชาในชั้นปีนี้</option>
             ) : (
-              filteredCourses.map((c) => (
-                <option key={c.courseId} value={c.courseId}>
-                  {c.courseCode} {c.courseName}
-                </option>
-              ))
+              filteredCourses.map((c) => {
+                const passed = passedCourseMap.get(c.courseId);
+                return (
+                  <option key={c.courseId} value={c.courseId}>
+                    {passed ? "✓ " : ""}
+                    {c.courseCode} {c.courseName}
+                  </option>
+                );
+              })
             )}
           </select>
         </div>
@@ -451,7 +631,7 @@ export function CourseReviewClient({
       )}
 
       {/* Optional Add Course Form */}
-      {showAddCourse && selectedMajor && (
+      {showAddCourse && canAddCourse && selectedMajor && (
         <form
           onSubmit={handleCreateCourse}
           className="bg-paper-surface border border-line rounded-2xl p-5 grid grid-cols-1 sm:grid-cols-12 gap-3 items-end"
@@ -523,6 +703,12 @@ export function CourseReviewClient({
                     <span className="text-ink-muted">
                       {selectedCourse.credits} หน่วยกิต
                     </span>
+                    {selectedPassedRecord && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-medium">
+                        <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                        ผ่านแล้ว (เกรด {selectedPassedRecord.grade})
+                      </span>
+                    )}
                   </div>
                   <h2 className="text-lg font-semibold text-ink-primary flex items-center gap-2">
                     <BookOpen className="w-5 h-5 text-brand flex-shrink-0" aria-hidden="true" />
@@ -614,7 +800,7 @@ export function CourseReviewClient({
                 เขียนรีวิววิชา {selectedCourse.courseCode}
               </h3>
 
-              {!currentUserId ? (
+              {!currentUser ? (
                 <div className="space-y-3 text-sm text-ink-secondary">
                   <p>เข้าสู่ระบบเพื่อแบ่งปันรีวิวเนื้อหา ภาระงาน และความยากในการเก็บเกรด</p>
                   <Link
@@ -624,8 +810,141 @@ export function CourseReviewClient({
                     เข้าสู่ระบบเพื่อรีวิว
                   </Link>
                 </div>
+              ) : isStudent && !hasStudentAffiliation ? (
+                <div className="space-y-3 text-sm text-ink-secondary">
+                  <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
+                    <Lock className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
+                    <div className="space-y-1 text-xs leading-relaxed">
+                      <p className="font-semibold">ยังไม่สามารถเขียนรีวิวได้</p>
+                      <p>
+                        บัญชีนักศึกษาของคุณยังไม่ได้ระบุมหาวิทยาลัย คณะ และสาขา กรุณาติดต่อผู้ดูแลระบบเพื่ออัปเดตข้อมูลสังกัด
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : isStudent && !isOwnAcademicScope ? (
+                <div className="space-y-3 text-sm text-ink-secondary">
+                  <div className="p-4 rounded-xl bg-paper-bg border border-line space-y-2">
+                    <div className="flex items-center gap-2 text-ink-primary font-semibold text-sm">
+                      <Lock className="w-4 h-4 text-ink-muted flex-shrink-0" aria-hidden="true" />
+                      จำกัดสิทธิ์เฉพาะสาขาของตนเอง
+                    </div>
+                    <p className="text-xs text-ink-secondary leading-relaxed">
+                      นักศึกษาสามารถเขียนรีวิวได้เฉพาะรายวิชาใน{" "}
+                      <strong className="text-ink-primary">
+                        มหาวิทยาลัย คณะ และสาขาของตนเอง
+                      </strong>{" "}
+                      และต้องเป็นรายวิชาที่เรียนผ่านแล้วเท่านั้น (คุณยังสามารถอ่านรีวิวของทุกสถาบันได้ตามปกติ)
+                    </p>
+                    <p className="text-xs text-ink-muted">
+                      สังกัดของคุณ: {currentUser.universityName} / {currentUser.facultyName} /{" "}
+                      {currentUser.majorName}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={jumpToOwnMajor}
+                    className="w-full min-h-[44px] px-4 py-2 rounded-lg bg-brand hover:bg-brand-hover text-white dark:text-zinc-950 text-sm font-medium transition-colors"
+                  >
+                    ไปยังรายวิชาในสาขาของฉัน
+                  </button>
+                </div>
+              ) : isStudent && !selectedPassedRecord ? (
+                <form onSubmit={handleRecordPassedCourse} className="space-y-4">
+                  <div className="p-3.5 rounded-xl bg-paper-bg border border-line space-y-1.5">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-ink-primary">
+                      <CheckCircle2 className="w-4 h-4 text-brand flex-shrink-0" aria-hidden="true" />
+                      ยืนยันว่าเรียนผ่านวิชานี้แล้วก่อนรีวิว
+                    </div>
+                    <p className="text-xs text-ink-secondary leading-relaxed">
+                      สามารถรีวิวได้เฉพาะรายวิชาที่เรียนผ่านแล้วเท่านั้น กรุณาบันทึกเกรดที่ผ่าน (A–D หรือ S) เพื่อปลดล็อกฟอร์มเขียนรีวิวสำหรับวิชา{" "}
+                      <span className="font-mono font-semibold text-ink-primary">
+                        {selectedCourse.courseCode}
+                      </span>
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2.5">
+                    <div>
+                      <label className="block text-xs font-medium text-ink-secondary mb-1">
+                        เกรดที่ผ่าน
+                      </label>
+                      <select
+                        value={passedGrade}
+                        onChange={(e) => setPassedGrade(e.target.value)}
+                        className={selectClass}
+                      >
+                        {PASSING_GRADE_OPTIONS.map((g) => (
+                          <option key={g} value={g}>
+                            {g}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-ink-secondary mb-1">
+                        ปีการศึกษา
+                      </label>
+                      <select
+                        value={passedYear}
+                        onChange={(e) => setPassedYear(e.target.value)}
+                        className={selectClass}
+                      >
+                        <option value="2569">2569</option>
+                        <option value="2568">2568</option>
+                        <option value="2567">2567</option>
+                        <option value="2566">2566</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-ink-secondary mb-1">
+                        ภาคเรียน
+                      </label>
+                      <select
+                        value={passedSemester}
+                        onChange={(e) => setPassedSemester(e.target.value)}
+                        className={selectClass}
+                      >
+                        <option value="1">เทอม 1</option>
+                        <option value="2">เทอม 2</option>
+                        <option value="summer">ฤดูร้อน</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isPending}
+                    className="w-full min-h-[44px] px-4 py-2 rounded-lg bg-brand hover:bg-brand-hover text-white dark:text-zinc-950 text-sm font-medium inline-flex items-center justify-center gap-1.5 disabled:opacity-60 transition-colors"
+                  >
+                    <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+                    {isPending ? "กำลังบันทึก..." : "บันทึกว่าเรียนผ่านวิชานี้แล้ว"}
+                  </button>
+                </form>
               ) : (
                 <form onSubmit={handleSubmitReview} className="space-y-4">
+                  {isStudent && selectedPassedRecord && (
+                    <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between gap-2 text-xs text-emerald-800 dark:text-emerald-200">
+                      <span className="inline-flex items-center gap-1.5 font-medium">
+                        <CheckCircle2 className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+                        ผ่านวิชานี้แล้ว · เกรด {selectedPassedRecord.grade} (ปี{" "}
+                        {selectedPassedRecord.academicYear} เทอม{" "}
+                        {selectedPassedRecord.semester})
+                      </span>
+                      {!hasExistingUserReview && (
+                        <button
+                          type="button"
+                          onClick={handleRemovePassedCourse}
+                          disabled={isPending}
+                          title="ยกเลิกสถานะเรียนผ่าน"
+                          className="p-1 rounded hover:bg-emerald-200/60 dark:hover:bg-emerald-900/60 transition-colors"
+                        >
+                          <X className="w-3.5 h-3.5" aria-hidden="true" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+
                   <ScorePicker
                     label="เนื้อหา (Content)"
                     hint="1 น้อย → 5 ดีมาก"
@@ -651,13 +970,15 @@ export function CourseReviewClient({
                         ปีการศึกษาที่เรียน
                       </label>
                       <select
-                        value={academicYear}
+                        value={selectedPassedRecord?.academicYear || academicYear}
                         onChange={(e) => setAcademicYear(e.target.value)}
+                        disabled={Boolean(selectedPassedRecord)}
                         className={selectClass}
                       >
                         <option value="2569">2569</option>
                         <option value="2568">2568</option>
                         <option value="2567">2567</option>
+                        <option value="2566">2566</option>
                       </select>
                     </div>
                     <div>
@@ -665,8 +986,9 @@ export function CourseReviewClient({
                         ภาคเรียน
                       </label>
                       <select
-                        value={semester}
+                        value={selectedPassedRecord?.semester || semester}
                         onChange={(e) => setSemester(e.target.value)}
+                        disabled={Boolean(selectedPassedRecord)}
                         className={selectClass}
                       >
                         <option value="1">เทอม 1</option>

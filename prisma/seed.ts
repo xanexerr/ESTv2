@@ -14,6 +14,7 @@ async function main() {
   console.log("Seeding PostgreSQL database for EST Platform...");
 
   await prisma.courseReview.deleteMany();
+  await prisma.studentPassedCourse.deleteMany();
   await prisma.course.deleteMany();
   await prisma.periodReport.deleteMany();
   await prisma.dailyLog.deleteMany();
@@ -101,37 +102,41 @@ async function main() {
       credits: 3,
     },
   });
-  await prisma.course.createMany({
-    data: [
-      {
-        majorId: majPsuCoe.majorId,
-        courseCode: "240-101",
-        courseName: "การเขียนโปรแกรมคอมพิวเตอร์เบื้องต้น",
-        yearLevel: 1,
-        credits: 3,
-      },
-      {
-        majorId: majPsuCoe.majorId,
-        courseCode: "240-412",
-        courseName: "วิศวกรรมซอฟต์แวร์และการทดสอบระบบ",
-        yearLevel: 4,
-        credits: 3,
-      },
-      {
-        majorId: majTsuIt.majorId,
-        courseCode: "020-205",
-        courseName: "การออกแบบประสบการณ์ผู้ใช้ (UX/UI Design)",
-        yearLevel: 2,
-        credits: 3,
-      },
-      {
-        majorId: majKmuttCs.majorId,
-        courseCode: "CSC210",
-        courseName: "Object-Oriented Programming",
-        yearLevel: 2,
-        credits: 3,
-      },
-    ],
+  const cIntro = await prisma.course.create({
+    data: {
+      majorId: majPsuCoe.majorId,
+      courseCode: "240-101",
+      courseName: "การเขียนโปรแกรมคอมพิวเตอร์เบื้องต้น",
+      yearLevel: 1,
+      credits: 3,
+    },
+  });
+  await prisma.course.create({
+    data: {
+      majorId: majPsuCoe.majorId,
+      courseCode: "240-412",
+      courseName: "วิศวกรรมซอฟต์แวร์และการทดสอบระบบ",
+      yearLevel: 4,
+      credits: 3,
+    },
+  });
+  const cUx = await prisma.course.create({
+    data: {
+      majorId: majTsuIt.majorId,
+      courseCode: "020-205",
+      courseName: "การออกแบบประสบการณ์ผู้ใช้ (UX/UI Design)",
+      yearLevel: 2,
+      credits: 3,
+    },
+  });
+  const cOop = await prisma.course.create({
+    data: {
+      majorId: majKmuttCs.majorId,
+      courseCode: "CSC210",
+      courseName: "Object-Oriented Programming",
+      yearLevel: 2,
+      credits: 3,
+    },
   });
 
   // Create Admin, Teacher, and a sample Pending Registration
@@ -275,7 +280,10 @@ async function main() {
         userFname: "สมชาย",
         userLname: "ใจดี",
         userTel: "0834567890",
-        institution: "มหาวิทยาลัยสงขลานครินทร์",
+        institution: "มหาวิทยาลัยสงขลานครินทร์ / คณะวิศวกรรมศาสตร์",
+        universityId: uniPsu.universityId,
+        facultyId: facPsuEng.facultyId,
+        majorId: majPsuCoe.majorId,
         academicYear: "2569",
         workplaceId: wp1.workplaceId,
       },
@@ -288,7 +296,10 @@ async function main() {
         userFname: "กานดา",
         userLname: "รักเรียน",
         userTel: "0845678901",
-        institution: "มหาวิทยาลัยสงขลานครินทร์",
+        institution: "มหาวิทยาลัยสงขลานครินทร์ / คณะวิทยาศาสตร์",
+        universityId: uniPsu.universityId,
+        facultyId: facPsuSci.facultyId,
+        majorId: majPsuCs.majorId,
         academicYear: "2569",
         workplaceId: wp1.workplaceId,
       },
@@ -301,7 +312,10 @@ async function main() {
         userFname: "ปิติ",
         userLname: "พัฒนา",
         userTel: "0856789012",
-        institution: "มหาวิทยาลัยทักษิณ",
+        institution: "มหาวิทยาลัยทักษิณ / คณะวิทยาศาสตร์และนวัตกรรมดิจิทัล",
+        universityId: uniTsu.universityId,
+        facultyId: facTsuSci.facultyId,
+        majorId: majTsuIt.majorId,
         academicYear: "2568",
         workplaceId: wp2.workplaceId,
       },
@@ -337,6 +351,20 @@ async function main() {
         academicYear: "2569",
         workplaceId: wp1.workplaceId,
       },
+    ],
+  });
+
+  // Sample Passed Courses (each student only passes courses within their own university/faculty/major)
+  await prisma.studentPassedCourse.createMany({
+    data: [
+      { userId: "650001", courseId: cIntro.courseId, grade: "A", academicYear: "2567", semester: "1" },
+      { userId: "650001", courseId: cAlgo.courseId, grade: "B+", academicYear: "2568", semester: "1" },
+      { userId: "650001", courseId: cWeb.courseId, grade: "A", academicYear: "2568", semester: "2" },
+      { userId: "650002", courseId: cDb.courseId, grade: "B+", academicYear: "2568", semester: "1" },
+      { userId: "650003", courseId: cUx.courseId, grade: "A", academicYear: "2568", semester: "1" },
+      { userId: "650004", courseId: cOop.courseId, grade: "B", academicYear: "2568", semester: "2" },
+      { userId: "6901010001", courseId: cIntro.courseId, grade: "A", academicYear: "2568", semester: "1" },
+      { userId: "6901010001", courseId: cAlgo.courseId, grade: "B+", academicYear: "2568", semester: "2" },
     ],
   });
 
