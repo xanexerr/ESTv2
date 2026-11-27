@@ -123,7 +123,7 @@ export default async function StudentWorkplacePage() {
             <div className="flex items-center gap-3 pt-2">
               <Link
                 href={hasComment ? "/student/review/edit" : "/student/review"}
-                className="flex-1 inline-flex items-center justify-center py-2.5 px-4 rounded-lg bg-brand hover:bg-brand-hover text-white font-medium text-sm transition-colors"
+                className="flex-1 inline-flex items-center justify-center py-2.5 px-4 rounded-lg bg-brand hover:bg-brand-hover text-white dark:text-zinc-950 font-medium text-sm transition-colors"
               >
                 {hasComment
                   ? "แก้ไขความคิดเห็นของคุณ"
@@ -149,7 +149,7 @@ export default async function StudentWorkplacePage() {
           <div className="max-w-xs mx-auto space-y-2.5">
             <Link
               href="/student/workplace/new"
-              className="w-full inline-flex items-center justify-center py-2.5 px-4 rounded-lg bg-brand hover:bg-brand-hover text-white font-medium text-sm transition-colors"
+              className="w-full inline-flex items-center justify-center py-2.5 px-4 rounded-lg bg-brand hover:bg-brand-hover text-white dark:text-zinc-950 font-medium text-sm transition-colors"
             >
               เพิ่มสถานประกอบการใหม่
             </Link>

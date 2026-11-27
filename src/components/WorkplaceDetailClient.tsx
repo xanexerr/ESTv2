@@ -39,7 +39,7 @@ export function SelectWorkplaceButton({
       <button
         onClick={handleSelect}
         disabled={loading}
-        className="w-full min-h-[44px] sm:min-h-0 sm:h-10 inline-flex items-center justify-center gap-2 px-4 rounded-lg bg-brand hover:bg-brand-hover disabled:opacity-60 text-white text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+        className="w-full min-h-[44px] sm:min-h-0 sm:h-10 inline-flex items-center justify-center gap-2 px-4 rounded-lg bg-brand hover:bg-brand-hover disabled:opacity-60 text-white dark:text-zinc-950 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
       >
         <Check strokeWidth={1.5} aria-hidden="true" className="w-4 h-4" />
         {loading

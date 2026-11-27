@@ -38,7 +38,7 @@ export default async function TeacherWorkplacesPage() {
 
         <Link
           href="/teacher/workplaces/new"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand hover:bg-brand-hover text-white text-sm font-medium transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand hover:bg-brand-hover text-white dark:text-zinc-950 text-sm font-medium transition-colors"
         >
           <Plus strokeWidth={1.5} className="w-4 h-4" />
           เพิ่มสถานประกอบการ
@@ -53,7 +53,7 @@ export default async function TeacherWorkplacesPage() {
             </p>
             <Link
               href="/teacher/workplaces/new"
-              className="inline-flex items-center px-4 py-2 rounded-lg bg-brand text-white text-sm font-medium"
+              className="inline-flex items-center px-4 py-2 rounded-lg bg-brand text-white dark:text-zinc-950 text-sm font-medium"
             >
               เพิ่มสถานประกอบการแห่งแรก
             </Link>

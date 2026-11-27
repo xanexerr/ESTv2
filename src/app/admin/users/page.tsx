@@ -56,7 +56,7 @@ export default async function AdminUsersPage({
 
         <Link
           href="/admin/users/new"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand hover:bg-brand-hover text-white text-sm font-medium transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand hover:bg-brand-hover text-white dark:text-zinc-950 text-sm font-medium transition-colors"
         >
           <Plus strokeWidth={1.5} className="w-4 h-4" />
           เพิ่มบัญชีผู้ใช้
@@ -107,7 +107,7 @@ export default async function AdminUsersPage({
         <div className="md:col-span-2">
           <button
             type="submit"
-            className="w-full py-2 px-4 rounded-lg bg-brand hover:bg-brand-hover text-white text-sm font-medium transition-colors"
+            className="w-full py-2 px-4 rounded-lg bg-brand hover:bg-brand-hover text-white dark:text-zinc-950 text-sm font-medium transition-colors"
           >
             ค้นหา
           </button>

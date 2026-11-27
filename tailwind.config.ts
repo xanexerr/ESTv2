@@ -31,7 +31,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["'IBM Plex Sans Thai'", "system-ui", "sans-serif"],
+        sans: ["'Anuphan'", "system-ui", "sans-serif"],
         mono: ["'IBM Plex Mono'", "ui-monospace", "SFMono-Regular", "monospace"],
       },
     },

@@ -291,7 +291,7 @@ export function WorkplaceFormClient({
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2.5 px-4 rounded-lg bg-brand hover:bg-brand-hover disabled:opacity-60 text-white font-medium text-sm transition-colors"
+          className="w-full py-2.5 px-4 rounded-lg bg-brand hover:bg-brand-hover disabled:opacity-60 text-white dark:text-zinc-950 font-medium text-sm transition-colors"
         >
           {loading
             ? "กำลังบันทึก..."
@@ -494,7 +494,7 @@ export function ReviewFormClient({
         <button
           type="submit"
           disabled={loading}
-          className="flex-1 py-2.5 px-4 rounded-lg bg-brand hover:bg-brand-hover disabled:opacity-60 text-white font-medium text-sm transition-colors"
+          className="flex-1 py-2.5 px-4 rounded-lg bg-brand hover:bg-brand-hover disabled:opacity-60 text-white dark:text-zinc-950 font-medium text-sm transition-colors"
         >
           {loading
             ? "กำลังบันทึก..."

@@ -3,31 +3,31 @@
 @tailwind utilities;
 
 :root {
-  --bg: #F8F9FA;
+  --bg: #FAFAFA;
   --surface: #FFFFFF;
-  --surface-muted: #F1F3F5;
-  --ink-primary: #111827;
-  --ink-secondary: #374151;
-  --ink-muted: #525B69;
-  --line: rgba(17, 24, 39, 0.10);
-  --line-strong: rgba(17, 24, 39, 0.18);
-  --brand: #0F766E;
-  --brand-hover: #0D5E58;
-  --brand-subtle: #E6F4F3;
+  --surface-muted: #F4F4F5;
+  --ink-primary: #09090B;
+  --ink-secondary: #3F3F46;
+  --ink-muted: #52525B;
+  --line: rgba(9, 9, 11, 0.10);
+  --line-strong: rgba(9, 9, 11, 0.20);
+  --brand: #09090B;
+  --brand-hover: #27272A;
+  --brand-subtle: #F4F4F5;
 }
 
 .dark {
-  --bg: #0B0F14;
-  --surface: #131922;
-  --surface-muted: #1B2330;
-  --ink-primary: #F3F4F6;
-  --ink-secondary: #CBD5E1;
-  --ink-muted: #94A3B8;
-  --line: rgba(255, 255, 255, 0.10);
-  --line-strong: rgba(255, 255, 255, 0.18);
-  --brand: #14B8A6;
-  --brand-hover: #0D9488;
-  --brand-subtle: rgba(20, 184, 166, 0.14);
+  --bg: #09090B;
+  --surface: #111113;
+  --surface-muted: #18181B;
+  --ink-primary: #FAFAFA;
+  --ink-secondary: #D4D4D8;
+  --ink-muted: #A1A1AA;
+  --line: rgba(255, 255, 255, 0.11);
+  --line-strong: rgba(255, 255, 255, 0.22);
+  --brand: #FAFAFA;
+  --brand-hover: #E4E4E7;
+  --brand-subtle: rgba(255, 255, 255, 0.12);
 }
 
 @layer base {
@@ -38,7 +38,7 @@
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    font-family: 'IBM Plex Sans Thai', system-ui, -apple-system, sans-serif;
+    font-family: 'Anuphan', system-ui, -apple-system, sans-serif;
   }
 
   .tabular-nums {
