@@ -2,5 +2,11 @@ node_modules
 .next
 .git
 legacy-php
+QA Test
+figma-plugin
+deploy-logs
 *.log
 .env
+.env*.local
+tsconfig.tsbuildinfo
+README.md

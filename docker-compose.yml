@@ -7,6 +7,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-estv2}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-estv2password}
       POSTGRES_DB: ${POSTGRES_DB:-estv2_db}
+      TZ: ${TZ:-Asia/Bangkok}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
@@ -16,6 +17,11 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   web:
     build:
@@ -23,19 +29,32 @@ services:
       dockerfile: Dockerfile
     container_name: estv2-web
     restart: unless-stopped
-    profiles:
-      - fullstack
     depends_on:
       postgres:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-estv2}:${POSTGRES_PASSWORD:-estv2password}@postgres:5432/${POSTGRES_DB:-estv2_db}?schema=public
       JWT_SECRET: ${JWT_SECRET:-htc-estv2-super-secret-jwt-key-2026}
+      AUTO_SEED: ${AUTO_SEED:-true}
       NODE_ENV: production
+      PORT: 3000
+      TZ: ${TZ:-Asia/Bangkok}
     ports:
-      - "3000:3000"
+      - "${APP_PORT:-3000}:3000"
     volumes:
       - ./public/img:/app/public/img
+      - ./public/uploads:/app/public/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   postgres_data:

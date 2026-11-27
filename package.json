@@ -11,7 +11,14 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:setup": "prisma db push && tsx prisma/seed.ts",
     "docker:db": "docker compose up -d postgres",
-    "docker:full": "docker compose --profile fullstack up -d --build"
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f web",
+    "docker:full": "docker compose up -d --build",
+    "deploy": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/deploy.ps1",
+    "deploy:force": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/deploy.ps1 -Force",
+    "deploy:watch": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/auto-deploy-watch.ps1",
+    "deploy:webhook": "node scripts/webhook-server.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.4.1",
